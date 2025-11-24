@@ -1,0 +1,78 @@
+# AirBamin Desktop API
+
+Base URL: `https://tecbamin.com/api/desktop`
+
+## Auth Model
+- Login with `POST /api/desktop/login` using email/password/device_id.
+- Desktop receives a bearer `token` and must send `Authorization: Bearer <token>` on protected endpoints.
+- Single-device rule: on each login, any previous desktop session for the account is deactivated. If a request uses a deactivated token, the server returns `{"ok": false, "error": "session_revoked"}` with HTTP 401.
+
+## Endpoints
+
+### POST /api/desktop/login
+- Headers: `Content-Type: application/json`
+- Request JSON:
+  - `email` (string, required)
+  - `password` (string, required)
+  - `device_id` (string, required) – stable identifier for the PC
+  - `app_version` (string, optional) – client version string
+  - `platform` (string, optional, defaults to `windows`)
+- Success 200 JSON:
+```json
+{
+  "ok": true,
+  "token": "<session token>",
+  "plan": "<plan name>",
+  "expires_at": "2025-01-31T23:59:59Z",
+  "single_device": true,
+  "other_device_signed_out": true
+}
+```
+- Errors:
+  - 401 `{"ok": false, "error": "invalid_credentials"}`
+  - 403 `{"ok": false, "error": "no_subscription"}` (missing or expired plan)
+  - 403 `{"ok": false, "error": "blocked"}` (account inactive)
+- Notes:
+  - All previous active sessions are marked inactive before issuing the new token.
+  - `other_device_signed_out` is `true` when any previous session was deactivated.
+
+Example:
+```bash
+curl -X POST https://tecbamin.com/api/desktop/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "user@example.com", "password": "secret", "device_id": "PC-1234", "app_version": "1.2.3", "platform": "windows" }'
+```
+
+### GET /api/desktop/update
+- Query params:
+  - `version` (string, required) – client version
+  - `platform` (string, optional, defaults to `windows`)
+- Success 200 JSON:
+```json
+{
+  "latest_version": "1.2.5",
+  "mandatory": false,
+  "download_url": "https://tecbamin.com/downloads/airbamin-desktop.exe",
+  "release_notes": "Latest stability improvements and fixes.",
+  "platform": "windows"
+}
+```
+- Mandatory rule: `mandatory` is `true` when `version < MANDATORY_FROM_VERSION`.
+
+Example:
+```bash
+curl "https://tecbamin.com/api/desktop/update?version=1.0.0&platform=windows"
+```
+
+## Configuration
+- `LATEST_DESKTOP_VERSION` (e.g., `1.2.5`)
+- `LATEST_DESKTOP_DOWNLOAD_URL` (e.g., `https://tecbamin.com/downloads/airbamin-desktop.exe`)
+- `LATEST_DESKTOP_RELEASE_NOTES` (e.g., `Latest stability improvements and fixes.`)
+- `MANDATORY_FROM_VERSION` (e.g., `1.1.0`)
+- Secrets (JWT/HMAC/etc.) are stored in environment/config; do not hardcode them.
+
+## Status & Error Codes to Handle
+- `invalid_credentials`
+- `no_subscription`
+- `blocked`
+- `session_revoked`

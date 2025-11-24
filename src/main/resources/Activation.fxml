@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.airbamin.desktop.ui.ActivationController"
+            prefWidth="700" prefHeight="480">
+
+    <VBox alignment="CENTER"
+          spacing="18"
+          AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+          AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
+
+        <Label text="%activation.title"
+               style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+        <Label text="%activation.subtitle"
+               wrapText="true"
+               styleClass="subtext"/>
+
+        <VBox spacing="0" maxWidth="360">
+            <TextField fx:id="licenseField"
+                       promptText="%activation.field.code"
+                       prefWidth="360"
+                       prefHeight="40"/>
+        </VBox>
+
+        <HBox spacing="10" alignment="CENTER">
+            <Button text="%activation.btn.activate"
+                    fx:id="activateBtn"
+                    prefWidth="160"
+                    onAction="#onActivate"
+                    styleClass="primary-button"/>
+            <Button text="%activation.btn.signin"
+                    onAction="#onUseAccountLogin"
+                    styleClass="ghost-button"/>
+        </HBox>
+
+        <Label fx:id="statusLabel"
+               textFill="red"/>
+    </VBox>
+
+</AnchorPane>

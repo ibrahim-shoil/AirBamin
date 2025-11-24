@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<?import java.net.URL?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.airbamin.desktop.ui.SettingsController"
+            prefWidth="900" prefHeight="650">
+
+
+
+    <top>
+        <fx:include source="components/AppHeader.fxml"/>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="page-scroll">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="20" styleClass="page">
+
+                    <VBox alignment="CENTER_LEFT" spacing="6" maxWidth="800">
+                        <Label text="%settings.title" styleClass="section-title"/>
+                        <Label text="%settings.subtitle"
+                               wrapText="true"
+                               styleClass="body-text"/>
+                    </VBox>
+                    
+                    <VBox spacing="14" maxWidth="800" styleClass="card">
+                        <Label text="%settings.language" styleClass="card-title"/>
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="%settings.language_desc" styleClass="body-text"/>
+                            <javafx.scene.control.ComboBox fx:id="languageCombo" prefWidth="200"/>
+                        </HBox>
+                    </VBox>
+
+                    <VBox spacing="14" maxWidth="800" styleClass="card">
+                        <Label text="%settings.theme" styleClass="card-title"/>
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="%settings.theme_desc" styleClass="body-text"/>
+                            <javafx.scene.control.ComboBox fx:id="themeCombo" prefWidth="200"/>
+                        </HBox>
+                    </VBox>
+
+                    <VBox spacing="14" maxWidth="800" styleClass="card">
+                        <Label text="%settings.behavior" styleClass="card-title"/>
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="%settings.auto_refresh" styleClass="body-text"/>
+                            <CheckBox fx:id="autoRefreshCheck"/>
+                        </HBox>
+                    </VBox>
+
+                    <VBox spacing="10" maxWidth="800" styleClass="card">
+                        <Label text="%settings.upload_dest" styleClass="card-title"/>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <TextField fx:id="uploadDirField" prefWidth="520" editable="false"/>
+                            <Button text="%settings.browse" onAction="#onBrowseUploadDir" styleClass="ghost-button"/>
+                        </HBox>
+                        <Label text="%settings.upload_desc" styleClass="subtext" wrapText="true"/>
+                    </VBox>
+
+                    <VBox spacing="14" maxWidth="800" styleClass="card">
+                        <Label text="%settings.device" styleClass="card-title"/>
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="%settings.device_id" styleClass="body-text"/>
+                            <TextField fx:id="deviceIdField" prefWidth="250"/>
+                        </HBox>
+                        <Label text="%settings.device_desc"
+                               styleClass="subtext"
+                               wrapText="true"/>
+                    </VBox>
+
+                    <VBox spacing="10" maxWidth="800" styleClass="card">
+                        <Label text="%settings.updates" styleClass="card-title"/>
+                        <Label text="%settings.updates_desc"
+                               wrapText="true"
+                               styleClass="subtext"/>
+                        <HBox spacing="10">
+                            <Button text="%settings.check_updates"
+                                    onAction="#onCheckUpdates"
+                                    styleClass="secondary-button"/>
+                        </HBox>
+                    </VBox>
+
+                    <HBox spacing="12" alignment="CENTER_RIGHT" maxWidth="800">
+                        <Button text="%app.save"
+                                styleClass="primary-button"
+                                onAction="#onSave"/>
+
+                        <Button text="%app.cancel"
+                                styleClass="ghost-button"
+                                onAction="#onCancel"/>
+                    </HBox>
+
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Airbamin",
+    "slug": "airbamin-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0e0f12"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.airbamin.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Airbamin needs camera access to scan QR codes for quick PC connection.",
+        "NSPhotoLibraryUsageDescription": "Airbamin needs access to your photos to upload them to your PC.",
+        "NSLocalNetworkUsageDescription": "Airbamin needs local network access to discover and connect to nearby devices for file transfer.",
+        "NSBonjourServices": [
+          "_airbamin._tcp",
+          "_airbamin._tcp"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0e0f12"
+      },
+      "package": "com.airbamin.mobile",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Airbamin to scan QR codes for connecting to your PC"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e53be9a3-ed38-4b2c-8101-482e9ccc0b67"
+      }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                   AIRBAMIN - QUICK START GUIDE                           ║
+║                  For AI Assistant on Local PC                            ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+📋 COPY THIS PROMPT TO YOUR LOCAL AI:
+
+"I need to build and test the AirBamin Java desktop application. The backend
+API is already working on https://tecbamin.com/api/airbamin.
+
+Please read the file: AI_PROMPT_FOR_LOCAL_PC.md and follow all the steps to:
+1. Build the Java app with Maven
+2. Update the API secret in CryptoUtil.java
+3. Test backend API integration
+4. Test gift code activation
+5. Verify license caching
+6. Test offline mode
+7. Report any issues found
+
+The complete instructions are in AI_PROMPT_FOR_LOCAL_PC.md"
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔑 KEY INFORMATION YOU'LL NEED:
+
+API Base URL:
+  https://tecbamin.com/api/airbamin
+
+API Secret (for CryptoUtil.java):
+  3e2431ffc587315ed940778a9bed3b674060a5f3f66d882f85ceef6bb6a8249d
+
+Unused Gift Codes (90 days each):
+  AIRBAMIN-2025-GCIX
+  AIRBAMIN-2025-3EMB
+  AIRBAMIN-2025-MI6W
+  AIRBAMIN-2025-B1SD
+
+═══════════════════════════════════════════════════════════════════════════
+
+📂 FILES TO TRANSFER TO YOUR PC:
+
+Copy entire folder: /var/www/airbamin/airbamin-server/
+
+Include these documentation files:
+  - AI_PROMPT_FOR_LOCAL_PC.md (main instructions)
+  - README.md (project overview)
+  - FINAL_SUMMARY.md (complete details)
+  - TESTING_STATUS.md (backend test results)
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚡ QUICK BUILD COMMANDS:
+
+cd airbamin-server
+./mvnw clean package -DskipTests
+java -jar target/airbamin-server-1.0.0.jar
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ TESTING CHECKLIST:
+
+□ Build compiles successfully
+□ App starts on port 9090
+□ Update check API works
+□ Gift code activation works
+□ License cached to %APPDATA%/AirBamin/
+□ SecurityGuard changes limits based on license
+□ Offline mode works (uses cache)
+□ Device ID stable across restarts
+
+═══════════════════════════════════════════════════════════════════════════
+
+🐛 COMMON ISSUES:
+
+Issue: "JAVA_HOME not set"
+Fix: Set JAVA_HOME to JDK 17+ path
+
+Issue: "Connection refused"
+Fix: Check internet, firewall, antivirus
+
+Issue: "Signature verification failed"
+Fix: Wrong API secret in CryptoUtil.java
+
+Issue: Build fails
+Fix: Run ./mvnw clean install to re-download dependencies
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 CURRENT STATUS:
+
+Backend: ✅ 100% Complete and Tested
+Desktop: ✅ 100% Code Complete (build pending)
+APIs: ✅ All 4 endpoints working
+Database: ✅ Live with test data
+
+═══════════════════════════════════════════════════════════════════════════
+
+📖 FULL INSTRUCTIONS: See AI_PROMPT_FOR_LOCAL_PC.md
+
+═══════════════════════════════════════════════════════════════════════════

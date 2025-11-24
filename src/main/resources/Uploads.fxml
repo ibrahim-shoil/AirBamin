@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<?import java.net.URL?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.airbamin.desktop.ui.UploadsController"
+            prefWidth="900" prefHeight="650">
+
+
+
+    <top>
+        <fx:include source="components/AppHeader.fxml"/>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="page-scroll">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="20" styleClass="page">
+                    <VBox alignment="CENTER_LEFT" spacing="6" maxWidth="1000">
+                        <Label text="%uploads.title" styleClass="section-title"/>
+                        <Label text="%uploads.subtitle"
+                               wrapText="true"
+                               styleClass="body-text"/>
+                        <HBox spacing="10">
+                            <Button text="%uploads.btn.openfolder" onAction="#onOpenFolder" styleClass="secondary-button"/>
+                            <Button text="%uploads.btn.viewall" onAction="#onOpenFullList" styleClass="secondary-button"/>
+                        </HBox>
+                    </VBox>
+
+                    <VBox spacing="10" maxWidth="1000" styleClass="card">
+                        <Label text="%uploads.latest.title" styleClass="card-title"/>
+                        <TableView fx:id="filesTable" prefHeight="450" styleClass="uploads-table">
+                            <columns>
+                                <TableColumn fx:id="nameColumn" text="%uploads.col.filename" prefWidth="480"/>
+                                <TableColumn fx:id="sizeColumn" text="%uploads.col.size" prefWidth="160"/>
+                                <TableColumn fx:id="dateColumn" text="%uploads.col.date" prefWidth="300"/>
+                            </columns>
+                        </TableView>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Button text="%uploads.btn.refresh" onAction="#onRefresh" styleClass="secondary-button"/>
+                            <Label fx:id="statusLabel" styleClass="subtext"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

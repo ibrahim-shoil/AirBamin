@@ -1,0 +1,45 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------< com.airbamin.desktop:airbamin-desktop >----------------
+[INFO] Building airbamin-desktop 1.2.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ airbamin-desktop ---
+[INFO] Copying 28 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ airbamin-desktop ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 28 source files with javac [debug target 21] to target\classes
+[INFO] /D:/LIFE/PROGRAMING/airbamin-desktop/src/main/java/com/airbamin/desktop/system/WindowsThemeDetector.java: Some input files use or override a deprecated API.
+[INFO] /D:/LIFE/PROGRAMING/airbamin-desktop/src/main/java/com/airbamin/desktop/system/WindowsThemeDetector.java: Recompile with -Xlint:deprecation for details.
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] location of system modules is not set in conjunction with -source 21
+  not setting the location of system modules may lead to class files that cannot run on JDK 21
+    --release 21 is recommended instead of -source 21 -target 21 because it sets the location of system modules automatically
+[INFO] 1 warning
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/LIFE/PROGRAMING/airbamin-desktop/src/main/java/com/airbamin/desktop/ui/DashboardController.java:[422,17] method onSignOut() is already defined in class com.airbamin.desktop.ui.DashboardController
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.429 s
+[INFO] Finished at: 2025-11-21T03:42:59+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project airbamin-desktop: Compilation failure
+[ERROR] /D:/LIFE/PROGRAMING/airbamin-desktop/src/main/java/com/airbamin/desktop/ui/DashboardController.java:[422,17] method onSignOut() is already defined in class com.airbamin.desktop.ui.DashboardController
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

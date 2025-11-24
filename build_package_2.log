@@ -1,0 +1,78 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------< com.airbamin.desktop:airbamin-desktop >----------------
+[INFO] Building airbamin-desktop 1.2.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ airbamin-desktop ---
+[INFO] Copying 28 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ airbamin-desktop ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ airbamin-desktop ---
+[INFO] skip non existing resourceDirectory D:\LIFE\PROGRAMING\airbamin-desktop\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ airbamin-desktop ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ airbamin-desktop ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.3.0:jar (default-jar) @ airbamin-desktop ---
+[INFO] Building jar: D:\LIFE\PROGRAMING\airbamin-desktop\target\airbamin-desktop-1.2.0.jar
+[INFO] 
+[INFO] --- shade:3.5.0:shade (default) @ airbamin-desktop ---
+[INFO] Including org.openjfx:javafx-controls:jar:21.0.4 in the shaded jar.
+[INFO] Including org.openjfx:javafx-controls:jar:win:21.0.4 in the shaded jar.
+[INFO] Including org.openjfx:javafx-graphics:jar:21.0.4 in the shaded jar.
+[INFO] Including org.openjfx:javafx-graphics:jar:win:21.0.4 in the shaded jar.
+[INFO] Including org.openjfx:javafx-base:jar:21.0.4 in the shaded jar.
+[INFO] Including org.openjfx:javafx-base:jar:win:21.0.4 in the shaded jar.
+[INFO] Including org.openjfx:javafx-fxml:jar:21.0.4 in the shaded jar.
+[INFO] Including org.openjfx:javafx-fxml:jar:win:21.0.4 in the shaded jar.
+[INFO] Including com.fasterxml.jackson.core:jackson-databind:jar:2.17.1 in the shaded jar.
+[INFO] Including com.fasterxml.jackson.core:jackson-annotations:jar:2.17.1 in the shaded jar.
+[INFO] Including com.fasterxml.jackson.core:jackson-core:jar:2.17.1 in the shaded jar.
+[INFO] Including com.google.code.gson:gson:jar:2.11.0 in the shaded jar.
+[INFO] Including com.google.errorprone:error_prone_annotations:jar:2.27.0 in the shaded jar.
+[INFO] Including com.google.zxing:core:jar:3.5.3 in the shaded jar.
+[INFO] Including com.google.zxing:javase:jar:3.5.3 in the shaded jar.
+[INFO] Including com.beust:jcommander:jar:1.82 in the shaded jar.
+[INFO] Including com.github.jai-imageio:jai-imageio-core:jar:1.4.0 in the shaded jar.
+[INFO] Dependency-reduced POM written at: D:\LIFE\PROGRAMING\airbamin-desktop\dependency-reduced-pom.xml
+[WARNING] Discovered module-info.class. Shading will break its strong encapsulation.
+[WARNING] Discovered module-info.class. Shading will break its strong encapsulation.
+[WARNING] Discovered module-info.class. Shading will break its strong encapsulation.
+[WARNING] Discovered module-info.class. Shading will break its strong encapsulation.
+[WARNING] Discovered module-info.class. Shading will break its strong encapsulation.
+[WARNING] error_prone_annotations-2.27.0.jar, gson-2.11.0.jar, jackson-core-2.17.1.jar, jackson-databind-2.17.1.jar define 1 overlapping classes: 
+[WARNING]   - META-INF.versions.9.module-info
+[WARNING] jackson-annotations-2.17.1.jar, jackson-core-2.17.1.jar, jackson-databind-2.17.1.jar, jai-imageio-core-1.4.0.jar define 2 overlapping resources: 
+[WARNING]   - META-INF/LICENSE
+[WARNING]   - META-INF/NOTICE
+[WARNING] javafx-controls-21.0.4-win.jar, javafx-graphics-21.0.4-win.jar define 4 overlapping resources: 
+[WARNING]   - META-INF/substrate/config/reflectionconfig-aarch64-android.json
+[WARNING]   - META-INF/substrate/config/reflectionconfig-arm64-ios.json
+[WARNING]   - META-INF/substrate/config/reflectionconfig-x86_64-ios.json
+[WARNING]   - META-INF/substrate/config/resourcebundles
+[WARNING] javafx-base-21.0.4-win.jar, javafx-controls-21.0.4-win.jar, javafx-fxml-21.0.4-win.jar, javafx-graphics-21.0.4-win.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/substrate/config/reflectionconfig.json
+[WARNING] airbamin-desktop-1.2.0.jar, core-3.5.3.jar, error_prone_annotations-2.27.0.jar, gson-2.11.0.jar, jackson-annotations-2.17.1.jar, jackson-core-2.17.1.jar, jackson-databind-2.17.1.jar, jai-imageio-core-1.4.0.jar, javafx-base-21.0.4-win.jar, javafx-base-21.0.4.jar, javafx-controls-21.0.4-win.jar, javafx-controls-21.0.4.jar, javafx-fxml-21.0.4-win.jar, javafx-fxml-21.0.4.jar, javafx-graphics-21.0.4-win.jar, javafx-graphics-21.0.4.jar, javase-3.5.3.jar, jcommander-1.82.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/MANIFEST.MF
+[WARNING] maven-shade-plugin has detected that some files are
+[WARNING] present in two or more JARs. When this happens, only one
+[WARNING] single version of the file is copied to the uber jar.
+[WARNING] Usually this is not harmful and you can skip these warnings,
+[WARNING] otherwise try to manually exclude artifacts based on
+[WARNING] mvn dependency:tree -Ddetail=true and the above output.
+[WARNING] See https://maven.apache.org/plugins/maven-shade-plugin/
+[INFO] Replacing original artifact with shaded artifact.
+[INFO] Replacing D:\LIFE\PROGRAMING\airbamin-desktop\target\airbamin-desktop-1.2.0.jar with D:\LIFE\PROGRAMING\airbamin-desktop\target\airbamin-desktop-1.2.0-shaded.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.477 s
+[INFO] Finished at: 2025-11-21T03:43:54+02:00
+[INFO] ------------------------------------------------------------------------

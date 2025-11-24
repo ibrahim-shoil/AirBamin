@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.airbamin.desktop.ui.AppHeaderController"
+      fx:id="headerBar"
+      alignment="CENTER_LEFT"
+      spacing="18"
+      styleClass="app-header">
+
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="16"/>
+    </padding>
+
+    <ImageView fitHeight="40" preserveRatio="true">
+        <image>
+            <Image url="@../images/logo.png"/>
+        </image>
+    </ImageView>
+
+    <VBox spacing="2">
+        <Label text="%header.title" styleClass="app-title"/>
+        <Label text="%header.subtitle" styleClass="app-subtitle"/>
+    </VBox>
+
+    <Region HBox.hgrow="ALWAYS"/>
+
+    <HBox spacing="8" alignment="CENTER_RIGHT">
+        <Button text="%header.nav.home" styleClass="nav-button" onAction="#onNavigateHome"/>
+        <Button text="%header.nav.dashboard" styleClass="nav-button" onAction="#onNavigateDashboard"/>
+        <Button text="%header.nav.transfer" styleClass="nav-button" onAction="#onNavigateTransfer"/>
+        <Button text="%header.nav.files" styleClass="nav-button" onAction="#onNavigateFiles"/>
+        <Button text="%header.nav.settings" styleClass="nav-button" onAction="#onNavigateSettings"/>
+        <Button text="%header.nav.help" styleClass="nav-button" onAction="#onNavigateHelp"/>
+    </HBox>
+</HBox>

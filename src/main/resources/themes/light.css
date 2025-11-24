@@ -1,0 +1,414 @@
+@import url("../css/app-theme.css");
+
+@font-face {
+    font-family: 'Cairo';
+    src: url('../fonts/Cairo-Regular.ttf');
+}
+
+@font-face {
+    font-family: 'Cairo';
+    font-weight: bold;
+    src: url('../fonts/Cairo-Bold.ttf');
+}
+
+@font-face {
+    font-family: 'Cairo';
+    font-weight: 600;
+    src: url('../fonts/Cairo-SemiBold.ttf');
+}
+
+.root {
+    -fx-font-family: 'Cairo', 'Segoe UI', 'Inter';
+    -fx-font-size: 14px;
+    -fx-font-smoothing-type: gray;
+    -fx-background-color: #ffffff;
+    /* Pure White */
+    -fx-text-fill: #09090b;
+    /* Deep Zinc for text */
+    -fx-text-base-color: #09090b;
+}
+
+.app-header {
+    -fx-background-color: #ffffff;
+    -fx-effect: none;
+    /* Flat */
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 0 0 1 0;
+}
+
+.app-title {
+    -fx-text-fill: #09090b;
+}
+
+/* Custom Window Title Bar - Light */
+.window-title-bar {
+    -fx-background-color: #ffffff;
+    -fx-padding: 8 16;
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 0 0 1 0;
+}
+
+.window-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #71717a;
+}
+
+.window-button {
+    -fx-background-color: transparent;
+    -fx-padding: 6;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.window-button:hover {
+    -fx-background-color: #f4f4f5;
+}
+
+.window-button.close-button:hover {
+    -fx-background-color: #ef4444;
+}
+
+.window-button.close-button:hover .window-icon {
+    -fx-fill: #ffffff;
+}
+
+.window-icon {
+    -fx-fill: #71717a;
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+}
+
+
+.app-subtitle {
+    -fx-text-fill: #71717a;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #71717a;
+    -fx-cursor: hand;
+    -fx-padding: 8px 16px;
+    -fx-min-width: 85px;
+    -fx-pref-width: -1;
+    -fx-background-radius: 50;
+    /* Pill */
+}
+
+.nav-button:hover {
+    -fx-background-color: #f4f4f5;
+    /* Zinc-100 */
+    -fx-text-fill: #09090b;
+}
+
+.page {
+    -fx-background-color: transparent;
+}
+
+.card {
+    -fx-background-color: transparent;
+    -fx-text-fill: #09090b;
+    -fx-border-color: #e4e4e7;
+    /* Zinc-200 */
+    -fx-border-width: 1px;
+    -fx-effect: none;
+}
+
+.card-title,
+.section-title,
+.section-label,
+.highlight-label {
+    -fx-text-fill: #09090b;
+    -fx-font-smoothing-type: gray;
+}
+
+.section-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
+.label,
+.body-text,
+.card-body {
+    -fx-text-fill: #3f3f46;
+    /* Zinc-700 */
+}
+
+.subtext {
+    -fx-text-fill: #71717a;
+    -fx-font-size: 13px;
+}
+
+.status-note {
+    -fx-text-fill: #52525b;
+}
+
+.status-success {
+    -fx-text-fill: #16A34A;
+}
+
+.status-warning {
+    -fx-text-fill: #F97316;
+}
+
+.status-badge {
+    -fx-background-color: #f4f4f5;
+    -fx-text-fill: #09090b;
+}
+
+.primary-button {
+    -fx-background-color: #09090b;
+    /* Black button for light mode */
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: 600;
+    -fx-padding: 10px 24px;
+    -fx-background-radius: 50;
+    /* Pill */
+    -fx-cursor: hand;
+    -fx-effect: none;
+}
+
+.primary-button:hover {
+    -fx-background-color: #27272a;
+    /* Zinc-800 */
+    -fx-effect: none;
+}
+
+.secondary-button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #09090b;
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 1px;
+    -fx-font-weight: 600;
+    -fx-padding: 9px 22px;
+    -fx-background-radius: 50;
+    /* Pill */
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #f4f4f5;
+    -fx-border-color: #d4d4d8;
+}
+
+.ghost-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #71717a;
+    -fx-font-weight: 500;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 50;
+    -fx-cursor: hand;
+}
+
+.ghost-button:hover {
+    -fx-background-color: #f4f4f5;
+    -fx-text-fill: #09090b;
+}
+
+.uploads-table {
+    -fx-background-color: #FFFFFF;
+    -fx-table-cell-border-color: #f4f4f5;
+}
+
+.uploads-table .column-header,
+.uploads-table .column-header-background {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #71717a;
+    -fx-font-weight: bold;
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 0 0 1 0;
+}
+
+.uploads-table .table-row-cell {
+    -fx-text-fill: #09090b;
+    -fx-border-color: #f4f4f5;
+    -fx-border-width: 0 0 1 0;
+}
+
+.uploads-table .table-row-cell:odd {
+    -fx-background-color: #ffffff;
+}
+
+.uploads-table .table-row-cell:even {
+    -fx-background-color: #ffffff;
+}
+
+.uploads-table .table-row-cell:selected {
+    -fx-background-color: #f4f4f5;
+    -fx-text-fill: #09090b;
+}
+
+.uploads-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: #09090b;
+}
+
+.uploads-table .table-column {
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Fix TableView Text Contrast for Light Mode */
+.table-view .cell {
+    -fx-text-fill: #09090b;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #71717a;
+    -fx-font-weight: bold;
+}
+
+.info-tile {
+    -fx-background-color: #f4f4f5;
+    -fx-border-color: #e4e4e7;
+}
+
+.progress-accent .bar {
+    -fx-background-color: #09090b;
+    /* Black progress */
+}
+
+.text-field,
+.choice-box,
+.combo-box {
+    -fx-text-fill: #09090b;
+    -fx-prompt-text-fill: #a1a1aa;
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 1px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 8px 12px;
+}
+
+.text-field:focused,
+.choice-box:focused,
+.combo-box:focused {
+    -fx-border-color: #09090b;
+    /* Black border on focus */
+    -fx-border-width: 1px;
+    -fx-padding: 8px 12px;
+    -fx-effect: none;
+}
+
+/* Icons for Light Mode */
+.icon-small,
+.icon-medium {
+    -fx-fill: #71717a;
+}
+
+.icon-large {
+    -fx-fill: #09090b;
+}
+
+.footer {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 1 0 0 0;
+}
+
+/* Scrollbar Styling for Light Mode */
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8;
+    -fx-pref-height: 8;
+}
+
+.scroll-bar:vertical .track,
+.scroll-bar:horizontal .track {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: #d4d4d8;
+    -fx-background-radius: 4;
+}
+
+.scroll-bar:vertical .thumb:hover,
+.scroll-bar:horizontal .thumb:hover {
+    -fx-background-color: #a1a1aa;
+}
+
+.scroll-bar:vertical .thumb:pressed,
+.scroll-bar:horizontal .thumb:pressed {
+    -fx-background-color: #71717a;
+}
+
+/* Hide scrollbar buttons */
+.scroll-bar:vertical .increment-button,
+.scroll-bar:vertical .decrement-button,
+.scroll-bar:horizontal .increment-button,
+.scroll-bar:horizontal .decrement-button {
+    -fx-background-color: transparent;
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
+}
+
+/* Ensure the button area is also white with high specificity */
+.root .choice-box>.open-button,
+.root .combo-box>.arrow-button {
+    -fx-background-color: #ffffff;
+    -fx-padding: 0 8;
+}
+
+/* Force background on the control itself to be white */
+.root .choice-box,
+.root .combo-box {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #e4e4e7;
+    -fx-border-radius: 8;
+}
+
+.choice-box .label,
+.combo-box .list-cell {
+    -fx-text-fill: #09090b;
+}
+
+/* Selected value styling (closed dropdown) */
+.choice-box>.label {
+    -fx-background-color: transparent;
+    -fx-text-fill: #09090b;
+}
+
+.combo-box>.list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #09090b;
+}
+
+/* Dropdown arrow */
+.root .choice-box .open-button .arrow,
+.root .combo-box .arrow-button .arrow {
+    -fx-background-color: #71717a;
+}
+
+.root .choice-box:hover .open-button .arrow,
+.root .combo-box:hover .arrow-button .arrow {
+    -fx-background-color: #09090b;
+}
+
+/* Dropdown list styling */
+.choice-box .context-menu,
+.combo-box-popup .list-view {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 12, 0.2, 0, 4);
+}
+
+.choice-box .menu-item,
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #3f3f46;
+    -fx-padding: 10 16;
+}
+
+.choice-box .menu-item:focused,
+.choice-box .menu-item:hover,
+.combo-box-popup .list-view .list-cell:hover,
+.combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: #f4f4f5;
+    -fx-text-fill: #09090b;
+}

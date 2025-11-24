@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AirBamin – Phone to PC Upload</title>
+
+<style>
+    /* ---------------------- GLOBAL ---------------------- */
+    body {
+        margin: 0;
+        font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+        background: #0e0f12;
+        color: #fff;
+    }
+
+    /* Fluent background */
+    .background {
+        width: 100%;
+        min-height: 100vh;
+        background: linear-gradient(145deg, #1b2330, #11141b, #1c2331);
+        background-size: 250% 250%;
+        animation: moveBg 16s infinite ease;
+        padding: 50px 20px;
+    }
+
+    @keyframes moveBg {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .container {
+        width: 95%;
+        max-width: 1300px;
+        margin: auto;
+    }
+
+    .title {
+        font-size: 42px;
+        font-weight: 750;
+        margin-bottom: 20px;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+    }
+
+    /* Acrylic Card */
+    .card {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 20px;
+        padding: 40px;
+        backdrop-filter: blur(25px);
+        box-shadow: 0 28px 48px rgba(0,0,0,0.35);
+    }
+
+    label {
+        display: block;
+        font-size: 16px;
+        opacity: 0.9;
+        margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        background: #161a23;
+        color: #fff;
+        border: 1px solid #2f3442;
+        padding: 15px 16px;
+        font-size: 15px;
+        border-radius: 10px;
+        outline: none;
+        transition: .25s;
+    }
+
+    input[type="text"]:focus {
+        border-color: #6a96ff;
+        background: #1d2230;
+    }
+
+    .btn-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    button {
+        background: #26304a;
+        border: 1px solid #36466a;
+        padding: 11px 20px;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: #324063;
+        border-color: #4c5e8c;
+    }
+
+    .info {
+        font-size: 15px;
+        margin-top: 18px;
+        opacity: 0.85;
+        line-height: 1.6;
+    }
+
+    /* Layout */
+    .row {
+        display: flex;
+        gap: 30px;
+        margin-top: 35px;
+        flex-wrap: wrap;
+    }
+
+    .info-box {
+        flex: 1;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 24px;
+        border-radius: 14px;
+    }
+
+    .info-box h3 {
+        margin-top: 0;
+        font-size: 24px;
+        font-weight: 650;
+    }
+
+    .info-box p, .info-box ul {
+        font-size: 15px;
+        opacity: 0.85;
+        line-height: 1.7;
+    }
+
+    .qr-box {
+        width: 280px;
+        min-width: 280px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 20px;
+        border-radius: 14px;
+        text-align: center;
+    }
+
+    .qr-box img {
+        width: 100%;
+        border-radius: 12px;
+    }
+
+    /* Progress Bar */
+    .progress {
+        width: 100%;
+        height: 14px;
+        background: #1b2230;
+        border-radius: 12px;
+        margin: 25px 0;
+        overflow: hidden;
+        border: 1px solid #2c3448;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 45%;
+        background: linear-gradient(90deg, #6a9dff, #bb63ff);
+        animation: loading 3s infinite;
+    }
+
+    @keyframes loading {
+        0% {transform: translateX(-100%);}
+        100% {transform: translateX(200%);}
+    }
+
+    .path {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 15px 18px;
+        border-radius: 10px;
+        font-size: 14px;
+        overflow-x: auto;
+        margin-top: 10px;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+        .qr-box {
+            margin: auto;
+        }
+        .title {
+            font-size: 32px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="background">
+    <div class="container">
+
+        <div class="title">AirBamin – Phone to PC Upload</div>
+
+        <div class="card">
+
+            <label>Share this upload link with your phone</label>
+            <input type="text" value="http://192.168.1.11:9099" readonly />
+
+            <div class="btn-row">
+                <button>Copy</button>
+                <button>Refresh</button>
+            </div>
+
+            <div class="info">
+                Local IP: <b>192.168.1.11:9099</b><br>
+                Connected Phone: <b>192.168.1.2</b>
+            </div>
+
+            <div class="row">
+                <div class="info-box">
+                    <h3>How it works</h3>
+                    <p>
+                        Your phone can open the link above or scan the QR code.  
+                        It will instantly load the AirBamin upload page where you can choose files
+                        and send them directly to your PC.
+                    </p>
+
+                    <h4 style="margin-top:18px; font-size:18px;">Tips</h4>
+                    <ul>
+                        <li>If you switch Wi-Fi/hotspot, tap Refresh to update the IP.</li>
+                        <li>No apps or setup required — open the link and upload.</li>
+                        <li>Keep the phone tab open during upload for best speed.</li>
+                    </ul>
+                </div>
+
+                <div class="qr-box">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=http://192.168.1.11:9099">
+                </div>
+            </div>
+
+            <h3 style="margin-top:40px; font-size:24px; font-weight:650;">Upload progress</h3>
+            <div class="progress"><div class="progress-fill"></div></div>
+
+            <div class="info">
+                Connected Phone: <b>192.168.1.2</b>
+            </div>
+
+            <h3 style="margin-top:25px; font-size:22px; font-weight:650;">Save location</h3>
+            <div class="path">C:\Users\sho3i\Documents\AirBamin_Uploads</div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

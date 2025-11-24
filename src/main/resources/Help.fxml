@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+
+<?import java.net.URL?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.airbamin.desktop.ui.HelpController"
+            prefWidth="900" prefHeight="650">
+
+
+
+    <top>
+        <fx:include source="components/AppHeader.fxml"/>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="page-scroll">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="20" styleClass="page">
+                    <VBox alignment="CENTER_LEFT" spacing="6" maxWidth="900">
+                        <Label text="%help.title" styleClass="section-title"/>
+                        <Label text="%help.subtitle"
+                               wrapText="true"
+                               styleClass="body-text"/>
+                    </VBox>
+
+                    <VBox spacing="12" maxWidth="900" styleClass="card">
+                        <Label text="%help.how.title" styleClass="card-title"/>
+                        <Label text="%help.how.1"
+                               styleClass="body-text" wrapText="true"/>
+                        <Label text="%help.how.2"
+                               styleClass="body-text" wrapText="true"/>
+                        <Label text="%help.how.3"
+                               styleClass="body-text" wrapText="true"/>
+                        <Label text="%help.how.4"
+                               styleClass="body-text" wrapText="true"/>
+                    </VBox>
+
+                    <VBox spacing="12" maxWidth="900" styleClass="card">
+                        <Label text="%help.license.title" styleClass="card-title"/>
+                        <Label text="%help.license.desc"
+                               wrapText="true"
+                               styleClass="card-body"/>
+                        <Label text="%help.license.help"
+                               wrapText="true"
+                               styleClass="body-text"/>
+                    </VBox>
+
+                    <VBox spacing="12" maxWidth="900" styleClass="card">
+                        <Label text="%help.about.title" styleClass="card-title"/>
+                        <Label text="%help.about.subtitle" styleClass="section-label"/>
+                        <Label text="%help.about.desc"
+                               wrapText="true"
+                               styleClass="card-body"/>
+                        <Label fx:id="versionLabel" text="%help.version" styleClass="subtext"/>
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<?import java.net.URL?>
+
+<BorderPane fx:controller="com.airbamin.desktop.ui.TransferController"
+            fx:id="rootPane"
+            xmlns:fx="http://javafx.com/fxml">
+
+
+
+    <top>
+        <fx:include source="components/AppHeader.fxml"/>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="page-scroll">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="22" styleClass="page">
+
+                    <HBox alignment="CENTER_LEFT" spacing="12" maxWidth="1000">
+                        <VBox spacing="4">
+                            <Label text="%transfer.title" styleClass="section-title"/>
+                            <Label text="%transfer.subtitle"
+                                   wrapText="true"
+                                   styleClass="body-text"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox spacing="24" maxWidth="800">
+
+                        <!-- Connection Status (Simplified) -->
+                        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card">
+                            <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" styleClass="icon-medium"/>
+                            <VBox spacing="4">
+                                <Label text="%transfer.status.connected" fx:id="connectionStatusLabel" styleClass="status-note"/>
+                                <Label text="%transfer.subtitle" styleClass="subtext"/>
+                            </VBox>
+                        </HBox>
+
+                        <!-- Progress Section -->
+                        <VBox styleClass="card" spacing="16">
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <SVGPath content="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" styleClass="icon-large"/>
+                                <Label text="%transfer.progress.title" styleClass="card-title"/>
+                            </HBox>
+                            
+                            <ProgressBar fx:id="progressBar" prefWidth="Infinity" progress="0" styleClass="progress-accent"/>
+                            <Label fx:id="statusLabel" styleClass="status-note" text="%transfer.status.waiting"/>
+                        </VBox>
+
+                        <!-- Destination Section -->
+                        <VBox styleClass="card" spacing="16">
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <SVGPath content="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" styleClass="icon-medium"/>
+                                <Label text="%transfer.dest.title" styleClass="section-label"/>
+                            </HBox>
+                            
+                            <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-background-color: #f3f4f6; -fx-padding: 12; -fx-background-radius: 8;">
+                                <Label text="%transfer.dest.folder" styleClass="body-text" style="-fx-text-fill: #6b7280;"/>
+                                <Label fx:id="uploadDirLabel" HBox.hgrow="ALWAYS" styleClass="highlight-label"/>
+                            </HBox>
+                            
+                            <HBox spacing="12" alignment="CENTER_RIGHT">
+                                <Button text="%transfer.btn.openfolder" fx:id="openFolderButton" onAction="#onOpenFolder" styleClass="secondary-button">
+                                    <graphic>
+                                        <SVGPath content="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" styleClass="icon-small"/>
+                                    </graphic>
+                                </Button>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane>

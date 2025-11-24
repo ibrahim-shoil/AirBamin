@@ -1,0 +1,195 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { SelectedFile } from '../services/fileService';
+
+interface FilePickerScreenProps {
+    selectedFiles: SelectedFile[];
+    onAddFiles: () => void;
+    onRemoveFile: (index: number) => void;
+    onClearAll: () => void;
+    onUpload: () => void;
+    isUploading: boolean;
+    uploadProgress: number;
+}
+
+export default function FilePickerScreen({
+    selectedFiles,
+    onAddFiles,
+    onRemoveFile,
+    onClearAll,
+    onUpload,
+    isUploading,
+    uploadProgress,
+}: FilePickerScreenProps) {
+    const getFileIcon = (type: string) => {
+        if (type.includes('image')) return '🖼️';
+        if (type.includes('video')) return '🎥';
+        if (type.includes('document') || type.includes('pdf')) return '📄';
+        return '📁';
+    };
+
+    const formatFileSize = (bytes: number): string => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    };
+                    <Text style={styles.emptyText}>No files selected</Text>
+                    <Text style={styles.emptyHint}>
+                        Tap "Add Files" to select photos, videos, or documents
+                    </Text>
+                </View >
+            )
+}
+        </View >
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 20,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: '#ffffff',
+        marginBottom: 20,
+    },
+    addButton: {
+        backgroundColor: '#6a9dff',
+        padding: 16,
+        borderRadius: 14,
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    addButtonText: {
+        color: '#fff',
+        fontSize: 17,
+        fontWeight: '700',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    headerText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    clearText: {
+        color: '#ef4444',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    fileList: {
+        flex: 1,
+        marginBottom: 20,
+    },
+    fileItem: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.12)',
+    },
+    fileInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    fileIcon: {
+        fontSize: 32,
+        marginRight: 12,
+    },
+    fileDetails: {
+        flex: 1,
+    },
+    fileName: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    fileSize: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: 13,
+    },
+    removeButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 12,
+    },
+    removeButtonText: {
+        color: '#ef4444',
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    uploadButton: {
+        backgroundColor: '#bb63ff',
+        padding: 20,
+        borderRadius: 14,
+        alignItems: 'center',
+    },
+    uploadButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    progressContainer: {
+        padding: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.12)',
+    },
+    progressText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    progressBar: {
+        height: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: '#bb63ff',
+    },
+    emptyState: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyIcon: {
+        fontSize: 64,
+        marginBottom: 16,
+    },
+    emptyText: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 8,
+    },
+    emptyHint: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: 14,
+        textAlign: 'center',
+        paddingHorizontal: 40,
+    },
+});
