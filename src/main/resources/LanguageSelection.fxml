@@ -13,6 +13,7 @@
            prefWidth="600" prefHeight="400"
            style="-fx-background-color: #F3F4F6;">
 
+
     <VBox alignment="CENTER" spacing="30">
         <VBox alignment="CENTER" spacing="10">
             <Label text="%lang.select.title" styleClass="section-title"/>
@@ -22,13 +23,11 @@
         <HBox alignment="CENTER" spacing="20">
             <Button text="English"
                     onAction="#onEnglishSelected"
-                    styleClass="card"
-                    style="-fx-font-size: 18px; -fx-min-width: 150; -fx-min-height: 100;"/>
+                    styleClass="lang-button"/>
 
             <Button text="العربية"
                     onAction="#onArabicSelected"
-                    styleClass="card"
-                    style="-fx-font-size: 18px; -fx-min-width: 150; -fx-min-height: 100; -fx-font-family: 'Segoe UI', 'Arial';"/>
+                    styleClass="lang-button"/>
         </HBox>
     </VBox>
 

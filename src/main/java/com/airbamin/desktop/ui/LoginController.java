@@ -24,10 +24,23 @@ public class LoginController {
     private Label statusLabel;
     @FXML
     private Button signInButton;
+    @FXML
+    private Button forgotPasswordButton;
 
     @FXML
     public void initialize() {
         Platform.runLater(() -> {
+            // Force text fields to be left-to-right for input
+            if (emailField != null) {
+                emailField.setNodeOrientation(javafx.geometry.NodeOrientation.LEFT_TO_RIGHT);
+            }
+            if (passwordField != null) {
+                passwordField.setNodeOrientation(javafx.geometry.NodeOrientation.LEFT_TO_RIGHT);
+            }
+            if (deviceIdField != null) {
+                deviceIdField.setNodeOrientation(javafx.geometry.NodeOrientation.LEFT_TO_RIGHT);
+            }
+            
             LocalStorage.AccountSession session = LocalStorage.loadAccountSession();
             if (session != null && emailField != null) {
                 emailField.setText(session.email());
@@ -43,7 +56,7 @@ public class LoginController {
         String email = emailField.getText() == null ? "" : emailField.getText().trim();
         String password = passwordField.getText() == null ? "" : passwordField.getText();
         String deviceId = deviceIdField.getText() == null || deviceIdField.getText().isBlank()
-                ? "DESKTOP-PC"
+                ? LocalStorage.loadDeviceId()
                 : deviceIdField.getText().trim();
 
         if (email.isBlank() || password.isBlank()) {
@@ -64,11 +77,23 @@ public class LoginController {
         Navigation.navigate(emailField, "/Activation.fxml");
     }
 
+    @FXML
+    public void onCreateAccount() {
+        Navigation.navigate(emailField, "/SignUp.fxml");
+    }
+
+    @FXML
+    public void onForgotPassword() {
+        String email = emailField.getText() == null ? "" : emailField.getText().trim();
+        Navigation.navigateWithData(emailField, "/ForgotPassword.fxml", email);
+    }
+
     private void handleLoginResponse(String email, String deviceId, DesktopAuthService.LoginResponse response) {
         setBusy(false);
 
         if (response == null) {
             statusLabel.setText("Login failed. Try again.");
+            showForgotPassword();
             return;
         }
 
@@ -80,6 +105,7 @@ public class LoginController {
         if (!response.isOk()) {
             String message = response.message() != null ? response.message() : "Login failed. Try again.";
             statusLabel.setText(message);
+            showForgotPassword();
             return;
         }
 
@@ -89,6 +115,13 @@ public class LoginController {
         LocalStorage.saveDeviceId(deviceId);
 
         openHome();
+    }
+
+    private void showForgotPassword() {
+        if (forgotPasswordButton != null) {
+            forgotPasswordButton.setVisible(true);
+            forgotPasswordButton.setManaged(true);
+        }
     }
 
     private void openHome() {
@@ -102,3 +135,4 @@ public class LoginController {
         }
     }
 }
+

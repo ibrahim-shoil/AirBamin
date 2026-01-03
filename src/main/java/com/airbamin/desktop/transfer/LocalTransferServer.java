@@ -1,5 +1,6 @@
 package com.airbamin.desktop.transfer;
 
+import com.airbamin.desktop.ui.MirrorWindowManager;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -95,7 +96,12 @@ public class LocalTransferServer {
             executor = null;
         }
         if (shutdownHook != null) {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            try {
+                Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            } catch (IllegalStateException e) {
+                // Shutdown already in progress, hook cannot be removed
+                // This is expected when stop() is called from the shutdown hook itself
+            }
             shutdownHook = null;
         }
     }
@@ -601,29 +607,7 @@ public class LocalTransferServer {
         // Launch Mirror Window on JavaFX Thread
         System.out.println("[Mirror] Received mirror start request");
 
-        javafx.application.Platform.runLater(() -> {
-            try {
-                System.out.println("[Mirror] Opening mirror window...");
-                javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                        getClass().getResource("/MirrorDisplay.fxml"));
-
-                if (loader.getLocation() == null) {
-                    System.err.println("[Mirror] ERROR: MirrorDisplay.fxml not found!");
-                    return;
-                }
-
-                javafx.scene.Parent root = loader.load();
-                javafx.scene.Scene scene = new javafx.scene.Scene(root);
-                javafx.stage.Stage stage = new javafx.stage.Stage();
-                stage.setTitle("AirBamin Mirror");
-                stage.setScene(scene);
-                stage.show();
-                System.out.println("[Mirror] Mirror window opened successfully!");
-            } catch (Exception e) {
-                System.err.println("[Mirror] ERROR opening mirror window:");
-                e.printStackTrace();
-            }
-        });
+        MirrorWindowManager.show();
 
         sendResponse(exchange, 200, "Mirroring started");
     }

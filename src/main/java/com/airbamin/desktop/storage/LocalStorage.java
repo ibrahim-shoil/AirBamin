@@ -244,7 +244,20 @@ public class LocalStorage {
             }
         } catch (Exception ignored) {
         }
-        return "DESKTOP-PC";
+        // Default: detect OS dynamically
+        return getDefaultDeviceId();
+    }
+    
+    private static String getDefaultDeviceId() {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (os.contains("mac")) {
+            return "Mac";
+        } else if (os.contains("win")) {
+            return "Windows-PC";
+        } else if (os.contains("linux")) {
+            return "Linux-PC";
+        }
+        return "Desktop";
     }
 
     public static void saveDeviceId(String deviceId) {

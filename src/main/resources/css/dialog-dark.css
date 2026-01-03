@@ -1,0 +1,64 @@
+/* Dialog Dark Theme */
+
+.dialog-pane {
+    -fx-background-color: #1f1f1f;
+}
+
+.dialog-pane .label {
+    -fx-text-fill: #ffffff;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #1f1f1f;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.dialog-pane .content {
+    -fx-background-color: #1f1f1f;
+    -fx-padding: 20;
+}
+
+.dialog-pane .content .label {
+    -fx-text-fill: #e4e4e7;
+    -fx-font-size: 13px;
+}
+
+.dialog-pane .button-bar {
+    -fx-background-color: #1f1f1f;
+    -fx-padding: 14;
+}
+
+.dialog-pane .button {
+    -fx-background-color: #3f3f46;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 8 20;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.dialog-pane .button:hover {
+    -fx-background-color: #52525b;
+}
+
+.dialog-pane .button:pressed {
+    -fx-background-color: #27272a;
+}
+
+.dialog-pane .button:default {
+    -fx-background-color: #1976D2;
+}
+
+.dialog-pane .button:default:hover {
+    -fx-background-color: #1565C0;
+}
+
+.dialog-pane .button:default:pressed {
+    -fx-background-color: #0D47A1;
+}

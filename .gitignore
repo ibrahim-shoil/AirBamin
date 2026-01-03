@@ -13,6 +13,9 @@ target/
 *.iml
 *.ipr
 
+# Consolidated non-repo artifacts
+excluded-from-repo/
+
 ### Eclipse ###
 .apt_generated
 .classpath

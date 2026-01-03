@@ -33,8 +33,15 @@ public class MirrorDisplayController {
         receiver = new MirrorReceiver();
 
         // Start receiving and decoding
+        // Start receiving and decoding
         decoder.start();
-        receiver.start(decoder);
+        try {
+            receiver.start(decoder);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+            System.err.println("Failed to start MirrorReceiver: " + e.getMessage());
+            // Ideally show an alert to the user here
+        }
 
         // Auto-hide overlay after 3 seconds
         overlayPane.setOpacity(1.0);

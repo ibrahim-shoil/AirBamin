@@ -29,7 +29,7 @@ public class TransferService {
 
     public TransferService() {
         this(LocalStorage.loadUploadDirPath()
-                .orElse(Paths.get(System.getProperty("user.home"), "Documents", "AirBamin_Uploads")));
+                .orElse(Paths.get(System.getProperty("user.home"), "Downloads", "AirBamin", "Transfer")));
     }
 
     public TransferService(Path uploadDir) {

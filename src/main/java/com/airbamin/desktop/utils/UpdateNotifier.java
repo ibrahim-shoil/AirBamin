@@ -10,15 +10,17 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Modality;
 
-import java.awt.Desktop;
-import java.net.URI;
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
 
 public final class UpdateNotifier {
 
     private static boolean checkedOnce = false;
 
-    private UpdateNotifier() {}
+    private UpdateNotifier() {
+    }
 
     public static void checkForUpdates(Node owner, boolean showUpToDateMessage) {
         if (owner == null) {
@@ -38,14 +40,18 @@ public final class UpdateNotifier {
 
         String finalToken = token;
         CompletableFuture
-                .supplyAsync(() -> UpdateService.checkForUpdates(AppVersion.VERSION, "windows", finalToken))
+                .supplyAsync(() -> UpdateService.checkForUpdates(AppVersion.VERSION, "windows", finalToken,
+                        LocalStorage.loadLanguage()))
                 .thenAccept(response -> Platform.runLater(() -> handleResponse(owner, response, showUpToDateMessage)));
     }
 
     private static void handleResponse(Node owner, UpdateService.UpdateResponse response, boolean showUpToDateMessage) {
+        ResourceBundle resources = getResourceBundle();
+
         if (response == null) {
             if (showUpToDateMessage) {
-                showInfo("Update check failed", "Unable to check for updates right now.");
+                showInfo(resources.getString("update.failed.title"),
+                        resources.getString("update.failed.message"));
             }
             return;
         }
@@ -57,71 +63,121 @@ public final class UpdateNotifier {
 
         if (!response.isOk()) {
             if (showUpToDateMessage) {
-                String msg = response.message() != null ? response.message() : "Unable to check for updates.";
-                showInfo("Update check failed", msg);
+                String msg = response.message() != null ? response.message()
+                        : resources.getString("update.failed.message");
+                showInfo(resources.getString("update.failed.title"), msg);
             }
             return;
         }
 
         if (!response.updateAvailable()) {
             if (showUpToDateMessage) {
-                showInfo("Up to date", "You already have the latest version (" + AppVersion.VERSION + ").");
+                String message = MessageFormat.format(
+                        resources.getString("update.uptodate.message"),
+                        AppVersion.VERSION);
+                showInfo(resources.getString("update.uptodate.title"), message);
             }
             return;
         }
 
         if (response.mandatory()) {
-            showMandatoryDialog(response);
+            showMandatoryDialog(response, resources);
         } else {
-            showOptionalAlert(response);
+            showOptionalAlert(response, resources);
         }
     }
 
-    private static void showMandatoryDialog(UpdateService.UpdateResponse response) {
-        ButtonType downloadBtn = new ButtonType("Download update", ButtonBar.ButtonData.OK_DONE);
+    private static void showMandatoryDialog(UpdateService.UpdateResponse response, ResourceBundle resources) {
+        ButtonType downloadBtn = new ButtonType(resources.getString("update.btn.update_now"),
+                ButtonBar.ButtonData.OK_DONE);
         Alert alert = new Alert(Alert.AlertType.INFORMATION, response.releaseNotes(), downloadBtn);
-        alert.setTitle("Update required");
-        alert.setHeaderText("A required update is available (" + response.latestVersion() + ")");
+        alert.setTitle(resources.getString("update.required.title"));
+        String header = MessageFormat.format(
+                resources.getString("update.required.header"),
+                response.latestVersion());
+        alert.setHeaderText(header);
         alert.initModality(Modality.APPLICATION_MODAL);
         alert.getButtonTypes().setAll(downloadBtn, ButtonType.CLOSE);
 
+        // Apply theme styling and logo
+        DialogStyler.styleDialog(alert);
+
         alert.showAndWait().ifPresent(buttonType -> {
             if (buttonType == downloadBtn) {
-                openUrl(response.downloadUrl());
+                startSilentUpdate(response.downloadUrlDirect());
             }
         });
     }
 
-    private static void showOptionalAlert(UpdateService.UpdateResponse response) {
-        ButtonType downloadBtn = new ButtonType("Download", ButtonBar.ButtonData.OK_DONE);
-        ButtonType dismissBtn = new ButtonType("Dismiss", ButtonBar.ButtonData.CANCEL_CLOSE);
+    private static void showOptionalAlert(UpdateService.UpdateResponse response, ResourceBundle resources) {
+        ButtonType downloadBtn = new ButtonType(resources.getString("update.btn.update_now"),
+                ButtonBar.ButtonData.OK_DONE);
+        ButtonType dismissBtn = new ButtonType(resources.getString("update.available.btn.dismiss"),
+                ButtonBar.ButtonData.CANCEL_CLOSE);
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION, response.releaseNotes(), downloadBtn, dismissBtn);
-        alert.setTitle("Update available");
-        alert.setHeaderText("Update available (" + response.latestVersion() + ")");
+        alert.setTitle(resources.getString("update.available.title"));
+        String header = MessageFormat.format(
+                resources.getString("update.available.header"),
+                response.latestVersion());
+        alert.setHeaderText(header);
         alert.initModality(Modality.NONE);
         alert.getButtonTypes().setAll(downloadBtn, dismissBtn);
+
+        // Apply theme styling and logo
+        DialogStyler.styleDialog(alert);
 
         alert.show();
         alert.resultProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal == downloadBtn) {
-                openUrl(response.downloadUrl());
+                startSilentUpdate(response.downloadUrlDirect());
             }
         });
     }
 
-    private static void openUrl(String url) {
+    private static void startSilentUpdate(String url) {
         if (url == null || url.isBlank()) {
             return;
         }
-        try {
-            Desktop.getDesktop().browse(new URI(url));
-        } catch (Exception ignored) {}
+
+        ResourceBundle resources = getResourceBundle();
+        Alert progressAlert = new Alert(Alert.AlertType.INFORMATION);
+        progressAlert.setTitle(resources.getString("update.downloading.title"));
+        progressAlert.setHeaderText(resources.getString("update.downloading.header"));
+        progressAlert.setContentText(resources.getString("update.downloading.content"));
+        progressAlert.initModality(Modality.APPLICATION_MODAL);
+
+        // Remove buttons to prevent closing
+        progressAlert.getButtonTypes().clear();
+
+        DialogStyler.styleDialog(progressAlert);
+        progressAlert.show();
+
+        CompletableFuture.runAsync(() -> UpdateInstaller.downloadAndInstall(url));
     }
 
     private static void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
+        ResourceBundle resources = getResourceBundle();
+
+        // Create custom OK button with localized text
+        ButtonType okButton = new ButtonType(resources.getString("app.ok"), ButtonBar.ButtonData.OK_DONE);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, message, okButton);
         alert.setHeaderText(title);
+        alert.setTitle(""); // Remove default "Information" title
+
+        // Apply theme styling and logo
+        DialogStyler.styleDialog(alert, resources);
+
         alert.show();
+    }
+
+    private static ResourceBundle getResourceBundle() {
+        String lang = LocalStorage.loadLanguage();
+        if (lang == null || lang.isEmpty()) {
+            lang = "en";
+        }
+        Locale locale = lang.equals("ar") ? new Locale("ar") : new Locale("en");
+        return ResourceBundle.getBundle("com.airbamin.desktop.messages_" + lang, locale);
     }
 }

@@ -41,14 +41,19 @@
 
                     <VBox spacing="24" maxWidth="800">
 
-                        <!-- Connection Status (Simplified) -->
-                        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card">
-                            <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" styleClass="icon-medium"/>
-                            <VBox spacing="4">
-                                <Label text="%transfer.status.connected" fx:id="connectionStatusLabel" styleClass="status-note"/>
-                                <Label text="%transfer.subtitle" styleClass="subtext"/>
-                            </VBox>
-                        </HBox>
+                        <!-- QR Code / Connection Section -->
+                        <VBox styleClass="card" spacing="16" alignment="CENTER">
+                            <Label text="%transfer.qr.title" styleClass="card-title"/>
+                            <Label text="%transfer.subtitle" wrapText="true" textAlignment="CENTER" styleClass="body-text"/>
+                            
+                            <javafx.scene.layout.StackPane styleClass="qr-container" maxWidth="220">
+                                <ImageView fx:id="qrImageView" fitWidth="180" fitHeight="180" preserveRatio="true"/>
+                            </javafx.scene.layout.StackPane>
+                            
+                            <Label text="%transfer.share.title" styleClass="subtext"/>
+                            <javafx.scene.control.Hyperlink fx:id="connectionLink" styleClass="link"/>
+                            <Label fx:id="connectionStatusLabel" styleClass="status-note" text="%transfer.status.waiting"/>
+                        </VBox>
 
                         <!-- Progress Section -->
                         <VBox styleClass="card" spacing="16">
@@ -68,9 +73,9 @@
                                 <Label text="%transfer.dest.title" styleClass="section-label"/>
                             </HBox>
                             
-                            <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-background-color: #f3f4f6; -fx-padding: 12; -fx-background-radius: 8;">
-                                <Label text="%transfer.dest.folder" styleClass="body-text" style="-fx-text-fill: #6b7280;"/>
-                                <Label fx:id="uploadDirLabel" HBox.hgrow="ALWAYS" styleClass="highlight-label"/>
+                            <HBox spacing="10" alignment="CENTER_LEFT" styleClass="path-bar">
+                                <Label text="%transfer.dest.folder" styleClass="body-text, label-dim"/>
+                                <Label fx:id="uploadDirLabel" HBox.hgrow="ALWAYS" styleClass="highlight-label, label-dim"/>
                             </HBox>
                             
                             <HBox spacing="12" alignment="CENTER_RIGHT">

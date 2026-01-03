@@ -1,0 +1,65 @@
+/* Dialog Light Theme */
+
+.dialog-pane {
+    -fx-background-color: #ffffff;
+}
+
+.dialog-pane .label {
+    -fx-text-fill: #18181b;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #ffffff;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-text-fill: #18181b;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.dialog-pane .content {
+    -fx-background-color: #ffffff;
+    -fx-padding: 20;
+}
+
+.dialog-pane .content .label {
+    -fx-text-fill: #3f3f46;
+    -fx-font-size: 13px;
+}
+
+.dialog-pane .button-bar {
+    -fx-background-color: #ffffff;
+    -fx-padding: 14;
+}
+
+.dialog-pane .button {
+    -fx-background-color: #f4f4f5;
+    -fx-text-fill: #18181b;
+    -fx-padding: 8 20;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.dialog-pane .button:hover {
+    -fx-background-color: #e4e4e7;
+}
+
+.dialog-pane .button:pressed {
+    -fx-background-color: #d4d4d8;
+}
+
+.dialog-pane .button:default {
+    -fx-background-color: #1976D2;
+    -fx-text-fill: #ffffff;
+}
+
+.dialog-pane .button:default:hover {
+    -fx-background-color: #1565C0;
+}
+
+.dialog-pane .button:default:pressed {
+    -fx-background-color: #0D47A1;
+}

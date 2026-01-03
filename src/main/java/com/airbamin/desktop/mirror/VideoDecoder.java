@@ -43,17 +43,24 @@ public class VideoDecoder {
                 grabber = new FFmpegFrameGrabber(inputStream);
                 grabber.setFormat("h264");
                 grabber.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+                // Allow more probe data so SPS/PPS can be parsed
+                grabber.setOption("probesize", "2000000"); // ~2MB
+                grabber.setOption("analyzeduration", "2000000");
                 // Low latency settings
                 grabber.setOption("fflags", "nobuffer");
                 grabber.setOption("flags", "low_delay");
-                grabber.setOption("probesize", "32");
-                grabber.setOption("analyzeduration", "0");
 
                 grabber.start();
 
+                int frameCount = 0;
                 while (running) {
                     Frame frame = grabber.grabImage();
                     if (frame != null) {
+                        frameCount++;
+                        if (frameCount <= 3) {
+                            System.out.println("Decoded frame " + frameCount + " size: "
+                                    + frame.imageWidth + "x" + frame.imageHeight);
+                        }
                         updateImage(frame);
                     }
                 }

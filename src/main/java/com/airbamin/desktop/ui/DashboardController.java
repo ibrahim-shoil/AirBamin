@@ -3,6 +3,7 @@ package com.airbamin.desktop.ui;
 import com.airbamin.desktop.api.LicenseApi;
 import com.airbamin.desktop.storage.LocalStorage;
 import com.airbamin.desktop.utils.AuthManager;
+import com.airbamin.desktop.utils.DialogStyler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -55,6 +56,19 @@ public class DashboardController {
         }
     }
 
+    private String formatDaysText(long days) {
+        if (days < 0) {
+            return currentLocale.getLanguage().equals("ar") ? "منتهية" : "Expired";
+        }
+        String daysWord = currentLocale.getLanguage().equals("ar") ? "أيام" : "days";
+        return days + " " + daysWord;
+    }
+
+    // -------------------------------------------------------------
+    // INITIALIZE (SAFE)
+    // -------------------------------------------------------------
+    private java.util.Locale currentLocale;
+
     // -------------------------------------------------------------
     // INITIALIZE (SAFE)
     // -------------------------------------------------------------
@@ -70,8 +84,8 @@ public class DashboardController {
             String lang = LocalStorage.loadLanguage();
             if (lang == null || lang.isEmpty())
                 lang = "en";
-            java.util.Locale locale = lang.equals("ar") ? java.util.Locale.of("ar") : java.util.Locale.of("en");
-            resources = java.util.ResourceBundle.getBundle("com.airbamin.desktop.messages_" + lang, locale);
+            currentLocale = lang.equals("ar") ? new java.util.Locale("ar") : new java.util.Locale("en");
+            resources = java.util.ResourceBundle.getBundle("com.airbamin.desktop.messages_" + lang, currentLocale);
 
             setupThemeToggle();
             loadStatus();
@@ -170,6 +184,7 @@ public class DashboardController {
             }
             try {
                 LocalStorage.deleteLicense();
+                Navigation.clearCache();
             } catch (Exception ignored) {
             }
 
@@ -197,6 +212,9 @@ public class DashboardController {
     // -------------------------------------------------------------
     // LOAD STATUS
     // -------------------------------------------------------------
+    // -------------------------------------------------------------
+    // LOAD STATUS (OPTIMIZED)
+    // -------------------------------------------------------------
     private void loadStatus() {
         LocalStorage.AccountSession session = LocalStorage.loadAccountSession();
 
@@ -210,148 +228,179 @@ public class DashboardController {
             signOutButton.setManaged(isEmailSession || isActivationSession);
         }
 
-        if (session != null) {
-            // Try to refresh session from server
-            try {
-                com.airbamin.desktop.api.DesktopAuthService.LoginResponse refreshed = com.airbamin.desktop.api.DesktopAuthService
-                        .refreshSession(session.token());
+        // Run network operations in background thread
+        new Thread(() -> {
+            if (session != null) {
+                // Try to refresh session from server
+                try {
+                    com.airbamin.desktop.api.DesktopAuthService.LoginResponse refreshed = com.airbamin.desktop.api.DesktopAuthService
+                            .refreshSession(session.token());
 
-                if (refreshed != null && refreshed.isOk()) {
-                    // Update local storage with new details
-                    LocalStorage.AccountSession newSession = new LocalStorage.AccountSession(
-                            session.email(),
-                            session.token(), // Keep original token
-                            refreshed.plan(),
-                            refreshed.expiresAt(),
-                            refreshed.features());
-                    LocalStorage.saveAccountSession(newSession);
-                    fillFromAccountSession(newSession);
-                } else {
-                    // Fallback to cached session if refresh fails
-                    fillFromAccountSession(session);
+                    if (refreshed != null && refreshed.isOk()) {
+                        // Update local storage with new details
+                        LocalStorage.AccountSession newSession = new LocalStorage.AccountSession(
+                                session.email(),
+                                session.token(), // Keep original token
+                                refreshed.plan(),
+                                refreshed.expiresAt(),
+                                refreshed.features());
+                        LocalStorage.saveAccountSession(newSession);
+                        Platform.runLater(() -> fillFromAccountSession(newSession));
+                        return; // Done
+                    }
+                } catch (Exception e) {
+                    // fallthrough to use cached session
                 }
+                Platform.runLater(() -> fillFromAccountSession(session));
+                return;
+            }
+
+            // License Check (Network)
+            try {
+                String savedKey = LocalStorage.loadLicense();
+                String deviceId = LocalStorage.loadDeviceId();
+
+                if (savedKey == null || savedKey.isEmpty()) {
+                    Platform.runLater(() -> {
+                        statusBadge.setText(getString("dashboard.status.no_license"));
+                        openActivation();
+                    });
+                    return;
+                }
+
+                String response = LicenseApi.checkStatus(savedKey, deviceId);
+
+                Platform.runLater(() -> processLicenseResponse(response, savedKey, deviceId));
+
             } catch (Exception e) {
-                fillFromAccountSession(session);
+                Platform.runLater(() -> statusBadge.setText(getString("dashboard.status.failed_load")));
+            }
+        }).start();
+    }
+
+    private void processLicenseResponse(String response, String savedKey, String deviceId) {
+        if (response == null || response.trim().isEmpty()) {
+            statusBadge.setText(getString("dashboard.status.invalid_response"));
+            if (emailLabel != null) {
+                emailLabel.setText("");
             }
             return;
         }
 
-        try {
-            String savedKey = LocalStorage.loadLicense();
-            String deviceId = LocalStorage.loadDeviceId();
-
-            if (savedKey == null || savedKey.isEmpty()) {
-                statusBadge.setText(getString("dashboard.status.no_license"));
-                openActivation();
-                return;
-            }
-
-            String response = LicenseApi.checkStatus(savedKey, deviceId);
-            if (response == null || response.trim().isEmpty()) {
-                statusBadge.setText(getString("dashboard.status.invalid_response"));
-                if (emailLabel != null) {
-                    emailLabel.setText("");
-                }
-                return;
-            }
-
-            JsonObject json = JsonParser.parseString(response).getAsJsonObject();
-            if (!json.has("status")) {
-                statusBadge.setText(getString("dashboard.status.unknown"));
-                if (emailLabel != null) {
-                    emailLabel.setText("");
-                }
-                return;
-            }
-
-            String status = json.get("status").getAsString();
-            // Try to translate status if possible, otherwise show as is
-            String statusKey = "dashboard.status." + status.toLowerCase().replace(" ", "_");
-            String localizedStatus = getString(statusKey);
-            if (localizedStatus.equals(statusKey)) {
-                // fallback if key not found
-                localizedStatus = status;
-            }
-            statusBadge.setText(localizedStatus);
-
-            String normalized = status.toLowerCase();
-            if (normalized.contains("expired") ||
-                    normalized.contains("inactive") ||
-                    normalized.contains("no active")) {
-
-                LocalStorage.deleteLicense();
-                openActivation();
-                return;
-            }
-
-            // Fill labels
-            planLabel.setText(json.has("plan") ? json.get("plan").getAsString() : "");
-            daysLabel.setText(json.has("daysRemaining") ? json.get("daysRemaining").getAsString() : "");
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+        if (!json.has("status")) {
+            statusBadge.setText(getString("dashboard.status.unknown"));
             if (emailLabel != null) {
-                emailLabel.setText("Activation license");
+                emailLabel.setText("");
             }
+            return;
+        }
 
-            if (json.has("expiresAt")) {
+        String status = json.get("status").getAsString();
+        // Try to translate status if possible, otherwise show as is
+        String statusKey = "dashboard.status." + status.toLowerCase().replace(" ", "_");
+        String localizedStatus = getString(statusKey);
+        if (localizedStatus.equals(statusKey)) {
+            // fallback if key not found
+            localizedStatus = status;
+        }
+        statusBadge.setText(localizedStatus);
+
+        String normalized = status.toLowerCase();
+        if (normalized.contains("expired") ||
+                normalized.contains("inactive") ||
+                normalized.contains("no active")) {
+
+            LocalStorage.deleteLicense();
+            openActivation();
+            return;
+        }
+
+        // Fill labels
+        String plan = json.has("plan") ? json.get("plan").getAsString() : "";
+        if (currentLocale.getLanguage().equals("ar") && "Pro".equalsIgnoreCase(plan)) {
+            plan = "برو";
+        }
+        planLabel.setText(plan);
+
+        if (json.has("daysRemaining")) {
+            String daysText = json.get("daysRemaining").getAsString();
+            // If it's just a number, format it with localized word
+            try {
+                long daysNum = Long.parseLong(daysText);
+                daysLabel.setText(formatDaysText(daysNum));
+            } catch (NumberFormatException e) {
+                // If already formatted (contains "days" or other text), keep as is
+                daysLabel.setText(daysText);
+            }
+        } else {
+            daysLabel.setText("");
+        }
+        if (emailLabel != null) {
+            emailLabel.setText("Activation license");
+        }
+
+        if (json.has("expiresAt")) {
+            try {
+                // Try parsing as OffsetDateTime first
+                java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(json.get("expiresAt").getAsString());
+                expiryLabel.setText(
+                        odt.toLocalDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy", currentLocale)));
+
+                if (!json.has("daysRemaining")) {
+                    long days = java.time.Duration.between(java.time.OffsetDateTime.now(), odt).toDays();
+                    daysLabel.setText(formatDaysText(days));
+                }
+            } catch (Exception ex) {
                 try {
-                    // Try parsing as OffsetDateTime first
-                    java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(json.get("expiresAt").getAsString());
-                    expiryLabel.setText(odt.toLocalDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
+                    // Fallback to LocalDateTime
+                    LocalDateTime ldt = LocalDateTime.parse(json.get("expiresAt").getAsString());
+                    expiryLabel.setText(ldt.format(DateTimeFormatter.ofPattern("dd MMM yyyy", currentLocale)));
 
                     if (!json.has("daysRemaining")) {
-                        long days = java.time.Duration.between(java.time.OffsetDateTime.now(), odt).toDays();
-                        daysLabel.setText(days < 0 ? "Expired" : days + " days");
+                        long days = java.time.Duration.between(LocalDateTime.now(), ldt).toDays();
+                        daysLabel.setText(formatDaysText(days));
                     }
-                } catch (Exception ex) {
-                    try {
-                        // Fallback to LocalDateTime
-                        LocalDateTime ldt = LocalDateTime.parse(json.get("expiresAt").getAsString());
-                        expiryLabel.setText(ldt.format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
-
-                        if (!json.has("daysRemaining")) {
-                            long days = java.time.Duration.between(LocalDateTime.now(), ldt).toDays();
-                            daysLabel.setText(days < 0 ? "Expired" : days + " days");
-                        }
-                    } catch (Exception e2) {
-                        expiryLabel.setText(json.get("expiresAt").getAsString());
-                    }
-                }
-            } else {
-                expiryLabel.setText("");
-            }
-
-            deviceIdLabel.setText(json.has("deviceId") ? json.get("deviceId").getAsString() : deviceId);
-
-            // Features
-            featuresBox.getChildren().clear();
-            if (json.has("features") && json.get("features").isJsonArray()) {
-                JsonArray arr = json.getAsJsonArray("features");
-
-                for (int i = 0; i < arr.size(); i++) {
-                    String featureCode = arr.get(i).getAsString();
-                    String featureKey = "feature." + featureCode;
-                    String localizedFeature = getString(featureKey);
-                    // If translation missing, fallback to code
-                    if (localizedFeature.equals(featureKey)) {
-                        localizedFeature = featureCode;
-                    }
-
-                    Label tag = new Label(localizedFeature);
-                    tag.setStyle(
-                            "-fx-background-color:#1976D2; -fx-text-fill:white;" +
-                                    " -fx-padding:5 10; -fx-background-radius:5;");
-                    featuresBox.getChildren().add(tag);
+                } catch (Exception e2) {
+                    expiryLabel.setText(json.get("expiresAt").getAsString());
                 }
             }
+        } else {
+            expiryLabel.setText("");
+        }
 
-        } catch (Exception e) {
-            statusBadge.setText(getString("dashboard.status.failed_load"));
+        deviceIdLabel.setText(json.has("deviceId") ? json.get("deviceId").getAsString() : deviceId);
+
+        // Features
+        featuresBox.getChildren().clear();
+        if (json.has("features") && json.get("features").isJsonArray()) {
+            JsonArray arr = json.getAsJsonArray("features");
+
+            for (int i = 0; i < arr.size(); i++) {
+                String featureCode = arr.get(i).getAsString();
+                String featureKey = "feature." + featureCode;
+                String localizedFeature = getString(featureKey);
+                // If translation missing, fallback to code
+                if (localizedFeature.equals(featureKey)) {
+                    localizedFeature = featureCode;
+                }
+
+                Label tag = new Label(localizedFeature);
+                tag.getStyleClass().add("feature-tag");
+                featuresBox.getChildren().add(tag);
+            }
         }
     }
 
     private void fillFromAccountSession(LocalStorage.AccountSession session) {
         try {
             statusBadge.setText(getString("dashboard.status.signed_in"));
-            planLabel.setText(session.plan() != null ? session.plan() : "");
+
+            String plan = session.plan() != null ? session.plan() : "";
+            if (currentLocale.getLanguage().equals("ar") && "Pro".equalsIgnoreCase(plan)) {
+                plan = "برو";
+            }
+            planLabel.setText(plan);
 
             if (emailLabel != null) {
                 emailLabel.setText(session.email() != null ? session.email() : "");
@@ -361,16 +410,17 @@ public class DashboardController {
                 try {
                     // Try parsing as OffsetDateTime first (standard ISO)
                     java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(session.expiresAt());
-                    expiryLabel.setText(odt.toLocalDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
+                    expiryLabel.setText(
+                            odt.toLocalDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy", currentLocale)));
                     long days = java.time.Duration.between(java.time.OffsetDateTime.now(), odt).toDays();
-                    daysLabel.setText(days < 0 ? "Expired" : days + " days");
+                    daysLabel.setText(formatDaysText(days));
                 } catch (Exception e1) {
                     try {
                         // Fallback to LocalDateTime (no offset)
                         LocalDateTime ldt = LocalDateTime.parse(session.expiresAt());
-                        expiryLabel.setText(ldt.format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
+                        expiryLabel.setText(ldt.format(DateTimeFormatter.ofPattern("dd MMM yyyy", currentLocale)));
                         long days = java.time.Duration.between(LocalDateTime.now(), ldt).toDays();
-                        daysLabel.setText(days < 0 ? "Expired" : days + " days");
+                        daysLabel.setText(formatDaysText(days));
                     } catch (Exception e2) {
                         expiryLabel.setText(session.expiresAt());
                         daysLabel.setText("-");
@@ -445,6 +495,9 @@ public class DashboardController {
             javafx.scene.control.ButtonType cancelButton = new javafx.scene.control.ButtonType(
                     getString("dashboard.signout.cancel"), javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
             alert.getButtonTypes().setAll(confirmButton, cancelButton);
+
+            // Apply theme styling and logo
+            DialogStyler.styleDialog(alert);
 
             java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == confirmButton) {

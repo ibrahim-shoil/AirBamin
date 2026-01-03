@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.airbamin.desktop.ui.ResetCodeController"
+            prefWidth="600" prefHeight="350">
+
+    <children>
+        <VBox spacing="18"
+              alignment="CENTER"
+              AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+              AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
+
+            <padding>
+                <Insets top="32" right="32" bottom="32" left="32"/>
+            </padding>
+
+            <Label text="%reset.title"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+            <Label text="%reset.subtitle"
+                   styleClass="subtext"/>
+
+            <VBox spacing="12" maxWidth="360">
+                <TextField fx:id="codeField"
+                           promptText="%reset.code_placeholder"
+                           prefWidth="360"
+                           style="-fx-font-size: 18px; -fx-alignment: center;"/>
+            </VBox>
+
+            <HBox spacing="10" alignment="CENTER">
+                <Button fx:id="verifyButton"
+                        text="%reset.btn.verify"
+                        prefWidth="180"
+                        onAction="#onVerifyCode"
+                        styleClass="primary-button"/>
+            </HBox>
+
+            <Button text="%forgot.back_to_login"
+                    onAction="#onBackToLogin"
+                    styleClass="ghost-button"/>
+
+            <Label fx:id="statusLabel"
+                   textFill="red"/>
+        </VBox>
+    </children>
+</AnchorPane>

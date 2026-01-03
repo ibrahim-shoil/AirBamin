@@ -14,14 +14,8 @@ public class HomeController {
     private BorderPane rootPane;
     @FXML
     private Label messageLabel;
-    @FXML
-    private javafx.scene.image.ImageView qrImage;
-    @FXML
-    private Label ipLabel;
 
     private final LocalTransferServer localServer = LocalTransferServer.getInstance();
-    private final com.airbamin.desktop.transfer.TransferService transferService = localServer.getTransferService();
-    private final com.google.zxing.qrcode.QRCodeWriter qrWriter = new com.google.zxing.qrcode.QRCodeWriter();
 
     @FXML
     public void initialize() {
@@ -34,36 +28,8 @@ public class HomeController {
             boolean started = localServer.start();
             if (!started && messageLabel != null) {
                 messageLabel.setText("Server error: transfer link unavailable (all ports in use)");
-            } else {
-                refreshLink();
             }
         });
-    }
-
-    private void refreshLink() {
-        int port = localServer.getActivePort();
-        String url = transferService.buildPhoneUrl(com.airbamin.desktop.network.NetworkUtils.NetworkMode.AUTO, "",
-                port);
-        if (ipLabel != null) {
-            ipLabel.setText(url);
-        }
-        generateQr(url + "/");
-    }
-
-    private void generateQr(String text) {
-        if (qrImage == null)
-            return;
-        try {
-            var matrix = qrWriter.encode(text, com.google.zxing.BarcodeFormat.QR_CODE, 200, 200);
-            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-            com.google.zxing.client.j2se.MatrixToImageWriter.writeToStream(matrix, "PNG", out);
-            javafx.scene.image.Image image = new javafx.scene.image.Image(
-                    new java.io.ByteArrayInputStream(out.toByteArray()));
-            qrImage.setImage(image);
-        } catch (Exception e) {
-            if (messageLabel != null)
-                messageLabel.setText("QR error: " + e.getMessage());
-        }
     }
 
     @FXML
@@ -100,6 +66,16 @@ public class HomeController {
     @FXML
     public void openSettings() {
         loadScene("/Settings.fxml");
+    }
+
+    @FXML
+    public void openMirrorScreen() {
+        MirrorWindowManager.show();
+    }
+
+    @FXML
+    public void openYouTubeDownloader() {
+        loadScene("/YouTubeDownloader.fxml");
     }
 
     private void loadScene(String resource) {

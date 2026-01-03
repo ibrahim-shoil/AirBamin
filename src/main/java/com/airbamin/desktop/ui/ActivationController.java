@@ -27,7 +27,7 @@ public class ActivationController {
         String lang = LocalStorage.loadLanguage();
         if (lang == null || lang.isEmpty())
             lang = "en";
-        java.util.Locale locale = lang.equals("ar") ? java.util.Locale.of("ar") : java.util.Locale.of("en");
+        java.util.Locale locale = lang.equals("ar") ? new java.util.Locale("ar") : new java.util.Locale("en");
         resources = java.util.ResourceBundle.getBundle("com.airbamin.desktop.messages_" + lang, locale);
     }
 

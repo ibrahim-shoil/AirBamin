@@ -12,8 +12,8 @@
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.airbamin.desktop.ui.LoginController"
-            prefWidth="600" prefHeight="400">
+            fx:controller="com.airbamin.desktop.ui.SignUpController"
+            prefWidth="600" prefHeight="500">
 
     <children>
         <VBox spacing="18"
@@ -22,48 +22,44 @@
               AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
 
             <padding>
-                <Insets top="32" right="32" bottom="32" left="32"/>
+                <Insets top="24" right="32" bottom="24" left="32"/>
             </padding>
 
-            <Label text="%login.title"
+            <Label text="%signup.title"
                    style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
-            <Label text="%login.subtitle"
+            <Label text="%signup.subtitle"
                    styleClass="subtext"/>
 
             <VBox spacing="12" maxWidth="360">
+                <TextField fx:id="usernameField"
+                           promptText="%signup.username"
+                           prefWidth="360"/>
+                <TextField fx:id="nameField"
+                           promptText="%signup.name"
+                           prefWidth="360"/>
                 <TextField fx:id="emailField"
                            promptText="%login.email"
                            prefWidth="360"/>
                 <PasswordField fx:id="passwordField"
                                promptText="%login.password"
                                prefWidth="360"/>
-                <TextField fx:id="deviceIdField"
-                           promptText="%login.device_id"
-                           prefWidth="360"/>
+                <PasswordField fx:id="confirmPasswordField"
+                               promptText="%signup.confirm_password"
+                               prefWidth="360"/>
             </VBox>
 
             <HBox spacing="10" alignment="CENTER">
-                <Button fx:id="signInButton"
-                        text="%login.btn.signin"
+                <Button fx:id="signUpButton"
+                        text="%signup.btn.create"
                         prefWidth="160"
-                        onAction="#onSignIn"
+                        onAction="#onSignUp"
                         styleClass="primary-button"/>
-                <Button text="%login.btn.activation"
-                        onAction="#onUseActivation"
-                        styleClass="ghost-button"/>
             </HBox>
 
-            <Button fx:id="forgotPasswordButton"
-                    text="%login.forgot_password"
-                    onAction="#onForgotPassword"
-                    styleClass="ghost-button"
-                    visible="false"
-                    managed="false"/>
-
             <HBox spacing="5" alignment="CENTER">
-                <Label text="%login.no_account" styleClass="subtext"/>
-                <Button text="%signup.btn.create"
-                        onAction="#onCreateAccount"
+                <Label text="%signup.already_have_account" styleClass="subtext"/>
+                <Button text="%login.btn.signin"
+                        onAction="#onBackToLogin"
                         styleClass="ghost-button"/>
             </HBox>
 

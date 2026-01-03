@@ -53,7 +53,7 @@ public class LicenseManager {
                 String lang = LocalStorage.loadLanguage();
                 if (lang == null || lang.isEmpty())
                     lang = "en";
-                java.util.Locale locale = lang.equals("ar") ? java.util.Locale.of("ar") : java.util.Locale.of("en");
+                java.util.Locale locale = lang.equals("ar") ? new java.util.Locale("ar") : new java.util.Locale("en");
                 java.util.ResourceBundle bundle = java.util.ResourceBundle
                         .getBundle("com.airbamin.desktop.messages_" + lang, locale);
 

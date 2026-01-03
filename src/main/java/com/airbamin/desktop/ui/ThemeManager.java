@@ -43,9 +43,25 @@ public class ThemeManager {
     }
 
     public static boolean isSystemDark() {
-        // Windows Registry Check
         try {
             String os = System.getProperty("os.name").toLowerCase();
+
+            // macOS Dark Mode Check
+            if (os.contains("mac")) {
+                ProcessBuilder builder = new ProcessBuilder(
+                        "defaults", "read", "-g", "AppleInterfaceStyle");
+                Process process = builder.start();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String line = reader.readLine();
+                    if (line != null && line.trim().equalsIgnoreCase("Dark")) {
+                        return true;
+                    }
+                }
+                // If command fails or returns nothing, it means Light mode
+                return false;
+            }
+
+            // Windows Registry Check
             if (os.contains("win")) {
                 ProcessBuilder builder = new ProcessBuilder(
                         "reg", "query",
@@ -65,5 +81,19 @@ public class ThemeManager {
         } catch (Exception ignored) {
         }
         return false; // Default to light if unknown
+    }
+
+    public static void applyToDialog(javafx.scene.control.Dialog<?> dialog, String mode) {
+        if (dialog == null || dialog.getDialogPane() == null)
+            return;
+
+        javafx.scene.Scene scene = dialog.getDialogPane().getScene();
+        if (scene != null) {
+            applyTheme(scene, mode);
+            // Ensure dialog pane itself has correct background
+            if (THEME_DARK.equalsIgnoreCase(mode) || (THEME_SYSTEM.equalsIgnoreCase(mode) && isSystemDark())) {
+                dialog.getDialogPane().getStyleClass().add("dark-mode");
+            }
+        }
     }
 }

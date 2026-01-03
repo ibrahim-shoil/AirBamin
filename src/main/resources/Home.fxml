@@ -15,8 +15,7 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:id="rootPane"
-            fx:controller="com.airbamin.desktop.ui.HomeController"
-            prefWidth="900" prefHeight="650">
+            fx:controller="com.airbamin.desktop.ui.HomeController">
 
 
 
@@ -37,52 +36,75 @@
                                styleClass="body-text"/>
                     </VBox>
 
-                    <!-- Connection Status Card (QR Code) -->
-                    <VBox styleClass="card" maxWidth="600" spacing="16" alignment="CENTER">
-                        <Label text="%transfer.qr.title" styleClass="card-title"/>
-                        <ImageView fx:id="qrImage" fitHeight="200" fitWidth="200" preserveRatio="true"/>
-                        
-                        <VBox spacing="4" alignment="CENTER">
-                            <Label text="%transfer.share.title" styleClass="subtext"/>
-                            <Label fx:id="ipLabel" styleClass="highlight-label" style="-fx-font-size: 18px;"/>
-                        </VBox>
-                        
-                        <Label text="%transfer.steps.2" styleClass="subtext" textAlignment="CENTER" wrapText="true"/>
-                    </VBox>
+
 
                     <!-- Main Actions -->
                     <FlowPane hgap="24" vgap="24" alignment="CENTER" prefWrapLength="900">
                         
                         <!-- Receive from Phone -->
-                        <VBox styleClass="card" prefWidth="280" spacing="16" alignment="CENTER">
+                        <VBox styleClass="card" prefWidth="280" minHeight="320" spacing="16" alignment="TOP_CENTER">
                             <SVGPath content="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z" styleClass="icon-large"/>
                             <Label text="%home.receive_btn" styleClass="card-title"/>
                             <Label wrapText="true"
                                    text="%home.receive_desc"
                                    styleClass="card-body" textAlignment="CENTER"/>
+                            <Region VBox.vgrow="ALWAYS"/>
                             <Button text="%transfer.btn.openfolder" onAction="#openTransferCenter" styleClass="primary-button" maxWidth="Infinity"/>
                         </VBox>
 
                         <!-- Send to Phone -->
-                        <VBox styleClass="card" prefWidth="280" spacing="16" alignment="CENTER">
+                        <VBox styleClass="card" prefWidth="280" minHeight="320" spacing="16" alignment="TOP_CENTER">
                             <SVGPath content="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" styleClass="icon-large"/>
                             <Label text="%home.send_btn" styleClass="card-title"/>
                             <Label wrapText="true"
                                    text="%home.send_desc"
                                    styleClass="card-body" textAlignment="CENTER"/>
+                            <Region VBox.vgrow="ALWAYS"/>
                             <Button text="%home.select_files" onAction="#onSelectFiles" styleClass="primary-button" maxWidth="Infinity"/>
                         </VBox>
 
+                        <!-- Screen Mirroring -->
+                        <VBox styleClass="card" prefWidth="280" minHeight="320" spacing="16" alignment="TOP_CENTER">
+                            <SVGPath content="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM19 8H5v2h14V8zm0 4H5v2h14v-2z" styleClass="icon-large"/>
+                            <Label text="%home.mirror_btn" styleClass="card-title"/>
+                            <Label wrapText="true"
+                                   text="%home.mirror_desc"
+                                   styleClass="card-body" textAlignment="CENTER"/>
+                            <Region VBox.vgrow="ALWAYS"/>
+
+                            <Button text="%home.mirror_btn" styleClass="primary-button" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+
+                        <!-- YouTube Downloader -->
+                        <VBox styleClass="card" prefWidth="280" minHeight="320" spacing="16" alignment="TOP_CENTER">
+                            <SVGPath content="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" styleClass="icon-large" nodeOrientation="LEFT_TO_RIGHT"/>
+                            <Label text="%downloader.title" styleClass="card-title"/>
+                            <Label wrapText="true"
+                                   text="%downloader.subtitle"
+                                   styleClass="card-body" textAlignment="CENTER"/>
+                            <Region VBox.vgrow="ALWAYS"/>
+                            <Button text="%downloader.btn.download" onAction="#openYouTubeDownloader" styleClass="primary-button" maxWidth="Infinity"/>
+                        </VBox>
+
                     </FlowPane>
+
+                    <!-- Help Section -->
+                    <VBox styleClass="card" maxWidth="700" spacing="16" alignment="TOP_LEFT">
+                        <Label text="%home.help.title" styleClass="card-title"/>
+                        <VBox spacing="12">
+                            <Label wrapText="true" text="%home.help.step1" styleClass="body-text"/>
+                            <Label wrapText="true" text="%home.help.step2" styleClass="body-text"/>
+                            <Label wrapText="true" text="%home.help.step3" styleClass="body-text"/>
+                            <Label wrapText="true" text="%home.help.step4" styleClass="body-text"/>
+                        </VBox>
+                    </VBox>
                 </VBox>
             </content>
         </ScrollPane>
     </center>
 
     <bottom>
-        <HBox spacing="10" alignment="CENTER" styleClass="footer">
-            <Label fx:id="messageLabel" styleClass="subtext" opacity="0.5"/>
-        </HBox>
+
     </bottom>
 
 </BorderPane>

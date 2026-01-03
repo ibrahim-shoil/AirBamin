@@ -54,7 +54,6 @@
 
                     <VBox spacing="12" maxWidth="900" styleClass="card">
                         <Label text="%help.about.title" styleClass="card-title"/>
-                        <Label text="%help.about.subtitle" styleClass="section-label"/>
                         <Label text="%help.about.desc"
                                wrapText="true"
                                styleClass="card-body"/>

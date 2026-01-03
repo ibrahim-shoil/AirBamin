@@ -1,28 +1,15 @@
 @import url("../css/app-theme.css");
 
-@font-face {
-    font-family: 'Cairo';
-    src: url('../fonts/Cairo-Regular.ttf');
-}
 
-@font-face {
-    font-family: 'Cairo';
-    font-weight: bold;
-    src: url('../fonts/Cairo-Bold.ttf');
-}
-
-@font-face {
-    font-family: 'Cairo';
-    font-weight: 600;
-    src: url('../fonts/Cairo-SemiBold.ttf');
-}
 
 .root {
-    -fx-font-family: 'Cairo', 'Segoe UI', 'Inter';
+    -fx-font-family: "Baloo Bhaijaan 2", "Segoe UI", "Inter", "Arial";
+    -fx-font-weight: 700;
+    /* Bold by default */
     -fx-font-size: 14px;
     -fx-font-smoothing-type: gray;
-    -fx-background-color: #ffffff;
-    /* Pure White */
+    -fx-background-color: #f8f9fa;
+    /* Brand Light Grey */
     -fx-text-fill: #09090b;
     /* Deep Zinc for text */
     -fx-text-base-color: #09090b;
@@ -70,13 +57,85 @@
 }
 
 .window-button.close-button:hover .window-icon {
-    -fx-fill: #ffffff;
+    -fx-stroke: #ffffff;
 }
 
 .window-icon {
-    -fx-fill: #71717a;
-    -fx-scale-x: 1.2;
-    -fx-scale-y: 1.2;
+    -fx-fill: transparent;
+    -fx-stroke: #71717a;
+    -fx-stroke-width: 1;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}
+
+/* macOS Traffic Light Buttons */
+.macos-buttons {
+    -fx-padding: 0;
+}
+
+.mac-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-min-width: 12px;
+    -fx-min-height: 12px;
+    -fx-max-width: 12px;
+    -fx-max-height: 12px;
+    -fx-cursor: hand;
+}
+
+.mac-circle-close {
+    -fx-fill: #ff5f57;
+}
+
+.mac-circle-minimize {
+    -fx-fill: #febc2e;
+}
+
+.mac-circle-maximize {
+    -fx-fill: #28c840;
+}
+
+/* Icons hidden by default */
+.mac-icon-close,
+.mac-icon-minimize,
+.mac-icon-maximize {
+    -fx-fill: transparent;
+    -fx-stroke: transparent;
+    -fx-stroke-width: 1.5;
+    -fx-stroke-line-cap: round;
+}
+
+/* Show ALL icons when hovering the container */
+.macos-buttons:hover .mac-icon-close,
+.macos-buttons:hover .mac-icon-minimize,
+.macos-buttons:hover .mac-icon-maximize {
+    -fx-stroke: rgba(80, 30, 20, 0.6);
+}
+
+/* Darken circles on container hover */
+.macos-buttons:hover .mac-circle-close {
+    -fx-fill: #ff5f57;
+}
+
+.macos-buttons:hover .mac-circle-minimize {
+    -fx-fill: #febc2e;
+}
+
+.macos-buttons:hover .mac-circle-maximize {
+    -fx-fill: #28c840;
+}
+
+/* Extra darken on individual button hover */
+.mac-button:hover .mac-circle-close {
+    -fx-fill: #ff4136;
+}
+
+.mac-button:hover .mac-circle-minimize {
+    -fx-fill: #f5a623;
+}
+
+.mac-button:hover .mac-circle-maximize {
+    -fx-fill: #21ba45;
 }
 
 
@@ -98,7 +157,24 @@
 .nav-button:hover {
     -fx-background-color: #f4f4f5;
     /* Zinc-100 */
+    -fx-text-fill: #6366f1;
+}
+
+.nav-button:pressed {
+    -fx-background-color: #e4e4e7;
     -fx-text-fill: #09090b;
+}
+
+.nav-icon {
+    -fx-fill: transparent;
+    -fx-stroke: #71717a;
+    -fx-stroke-width: 2;
+    -fx-scale-x: 0.8;
+    -fx-scale-y: 0.8;
+}
+
+.nav-button:hover .nav-icon {
+    -fx-stroke: #6366f1;
 }
 
 .page {
@@ -106,7 +182,7 @@
 }
 
 .card {
-    -fx-background-color: transparent;
+    -fx-background-color: #ffffff;
     -fx-text-fill: #09090b;
     -fx-border-color: #e4e4e7;
     /* Zinc-200 */
@@ -157,8 +233,8 @@
 }
 
 .primary-button {
-    -fx-background-color: #09090b;
-    /* Black button for light mode */
+    -fx-background-color: #6366f1;
+    /* Brand Indigo */
     -fx-text-fill: #FFFFFF;
     -fx-font-weight: 600;
     -fx-padding: 10px 24px;
@@ -169,26 +245,32 @@
 }
 
 .primary-button:hover {
-    -fx-background-color: #27272a;
-    /* Zinc-800 */
+    -fx-background-color: #4f46e5;
+    /* Darker Indigo */
     -fx-effect: none;
 }
 
 .secondary-button {
     -fx-background-color: #ffffff;
-    -fx-text-fill: #09090b;
-    -fx-border-color: #e4e4e7;
+    -fx-text-fill: #6366f1;
+    /* Brand Indigo Text */
+    -fx-border-color: #6366f1;
+    /* Brand Indigo Border */
     -fx-border-width: 1px;
     -fx-font-weight: 600;
     -fx-padding: 9px 22px;
     -fx-background-radius: 50;
     /* Pill */
+    -fx-border-radius: 50;
     -fx-cursor: hand;
 }
 
 .secondary-button:hover {
-    -fx-background-color: #f4f4f5;
-    -fx-border-color: #d4d4d8;
+    -fx-background-color: #6366f1;
+    /* Brand Fill on Hover */
+    -fx-text-fill: #ffffff;
+    /* White Text on Hover */
+    -fx-border-color: #6366f1;
 }
 
 .ghost-button {
@@ -263,11 +345,16 @@
 }
 
 .progress-accent .bar {
-    -fx-background-color: #09090b;
-    /* Black progress */
+    -fx-background-color: #6366f1;
 }
 
+/* Text Fields - Light Mode Override (higher specificity) */
+.root .text-field,
+.root .password-field,
+.root .choice-box,
+.root .combo-box,
 .text-field,
+.password-field,
 .choice-box,
 .combo-box {
     -fx-text-fill: #09090b;
@@ -278,13 +365,21 @@
     -fx-background-radius: 8px;
     -fx-border-radius: 8px;
     -fx-padding: 8px 12px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-node-orientation: LEFT_TO_RIGHT;
 }
 
+.root .text-field:focused,
+.root .password-field:focused,
+.root .choice-box:focused,
+.root .combo-box:focused,
 .text-field:focused,
+.password-field:focused,
 .choice-box:focused,
 .combo-box:focused {
-    -fx-border-color: #09090b;
-    /* Black border on focus */
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #6366f1;
+
     -fx-border-width: 1px;
     -fx-padding: 8px 12px;
     -fx-effect: none;
@@ -385,7 +480,7 @@
 
 .root .choice-box:hover .open-button .arrow,
 .root .combo-box:hover .arrow-button .arrow {
-    -fx-background-color: #09090b;
+    -fx-background-color: #6366f1;
 }
 
 /* Dropdown list styling */
@@ -411,4 +506,60 @@
 .combo-box-popup .list-view .list-cell:selected {
     -fx-background-color: #f4f4f5;
     -fx-text-fill: #09090b;
+}
+
+/* Light Mode Overrides for ContextMenu and CheckBox */
+.context-menu {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e4e4e7;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 4);
+}
+
+.context-menu .menu-item:hover,
+.context-menu .menu-item:focused {
+    -fx-background-color: #f4f4f5;
+}
+
+.context-menu .menu-item .label {
+    -fx-text-fill: #09090b;
+}
+
+.check-box .box {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d4d4d8;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #6366f1;
+    -fx-border-color: #6366f1;
+}
+
+/* QR Code Container (Light Mode) */
+/* Upload Path Bar (Light Mode) */
+.path-bar {
+    -fx-background-color: #f3f4f6;
+    -fx-padding: 12;
+    -fx-background-radius: 8;
+}
+
+
+/* CheckBox Styling for Light Mode */
+.check-box {
+    -fx-text-fill: #09090b;
+}
+
+.check-box .box {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d4d4d8;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #6366f1;
+    -fx-border-color: #6366f1;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: #ffffff;
 }

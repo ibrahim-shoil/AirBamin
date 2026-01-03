@@ -5,7 +5,8 @@ import javafx.scene.layout.HBox;
 
 public class AppHeaderController {
 
-    @FXML private HBox headerBar;
+    @FXML
+    private HBox headerBar;
 
     @FXML
     private void onNavigateHome() {
@@ -18,13 +19,13 @@ public class AppHeaderController {
     }
 
     @FXML
-    private void onNavigateTransfer() {
-        Navigation.navigate(headerBar, "/Transfer.fxml");
+    private void onNavigateFiles() {
+        Navigation.navigate(headerBar, "/Uploads.fxml");
     }
 
     @FXML
-    private void onNavigateFiles() {
-        Navigation.navigate(headerBar, "/Uploads.fxml");
+    private void onNavigateDownload() {
+        Navigation.navigate(headerBar, "/YouTubeDownloader.fxml");
     }
 
     @FXML

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.SVGPath?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.airbamin.desktop.ui.TitleBarController"
+      fx:id="titleBar"
+      alignment="CENTER_LEFT"
+      spacing="10"
+      minHeight="40"
+      prefHeight="40"
+      styleClass="window-title-bar">
+
+    <padding>
+        <Insets left="12" right="12" top="8" bottom="8"/>
+    </padding>
+
+    <!-- macOS Traffic Light Buttons - handlers set up programmatically in TitleBarController -->
+    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="macos-buttons">
+        <!-- Close Button -->
+        <Button fx:id="closeBtn" styleClass="mac-button" minWidth="16" minHeight="16">
+            <graphic>
+                <StackPane alignment="CENTER">
+                    <Circle radius="6" styleClass="mac-circle-close"/>
+                    <SVGPath content="M-2.5,-2.5 L2.5,2.5 M2.5,-2.5 L-2.5,2.5" styleClass="mac-icon-close"/>
+                </StackPane>
+            </graphic>
+        </Button>
+        
+        <!-- Minimize Button -->
+        <Button fx:id="minimizeBtn" styleClass="mac-button" minWidth="16" minHeight="16">
+            <graphic>
+                <StackPane alignment="CENTER">
+                    <Circle radius="6" styleClass="mac-circle-minimize"/>
+                    <SVGPath content="M-3,0 L3,0" styleClass="mac-icon-minimize"/>
+                </StackPane>
+            </graphic>
+        </Button>
+        
+        <!-- Maximize Button (Fullscreen) -->
+        <Button fx:id="maximizeBtn" styleClass="mac-button" minWidth="16" minHeight="16">
+            <graphic>
+                <StackPane alignment="CENTER">
+                    <Circle radius="6" styleClass="mac-circle-maximize"/>
+                    <SVGPath content="M-3,0 L3,0 M0,-3 L0,3" styleClass="mac-icon-maximize"/>
+                </StackPane>
+            </graphic>
+        </Button>
+    </HBox>
+
+    <!-- Draggable region (left side) -->
+    <Region fx:id="dragRegionLeft" HBox.hgrow="ALWAYS" onMousePressed="#onMousePressed" onMouseDragged="#onMouseDragged"/>
+    
+    <!-- Window Title (centered) -->
+    <Label fx:id="windowTitle" text="AirBamin" styleClass="window-title" onMousePressed="#onMousePressed" onMouseDragged="#onMouseDragged"/>
+    
+    <!-- Draggable region (right side) -->
+    <Region fx:id="dragRegionRight" HBox.hgrow="ALWAYS" onMousePressed="#onMousePressed" onMouseDragged="#onMouseDragged"/>
+
+</HBox>

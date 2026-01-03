@@ -1,53 +1,52 @@
 package com.airbamin.desktop.mirror;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MirrorReceiver implements Runnable {
 
     private static final int PORT = 9091;
-    private static final int PACKET_SIZE = 65535; // Max UDP packet size
     private static final int BUFFER_SIZE = 1024 * 1024 * 2; // 2MB buffer
 
-    private DatagramSocket socket;
+    private java.net.ServerSocket serverSocket;
+    private java.net.Socket clientSocket;
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final BlockingQueue<byte[]> frameQueue = new LinkedBlockingQueue<>();
     private Thread receiverThread;
     private VideoDecoder decoder;
 
     public MirrorReceiver() {
     }
 
-    public void start(VideoDecoder decoder) {
+    public void start(VideoDecoder decoder) throws IOException {
         this.decoder = decoder;
         if (running.get())
             return;
 
-        try {
-            socket = new DatagramSocket(PORT);
-            socket.setReceiveBufferSize(BUFFER_SIZE);
-            running.set(true);
+        serverSocket = new java.net.ServerSocket();
+        serverSocket.setReuseAddress(true);
+        serverSocket.bind(new java.net.InetSocketAddress(PORT));
+        running.set(true);
 
-            receiverThread = new Thread(this, "MirrorReceiver");
-            receiverThread.start();
+        receiverThread = new Thread(this, "MirrorReceiver");
+        receiverThread.start();
 
-            System.out.println("MirrorReceiver started on port " + PORT);
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
+        System.out.println("MirrorReceiver (TCP) started on port " + PORT);
     }
 
     public void stop() {
         running.set(false);
-        if (socket != null && !socket.isClosed()) {
-            socket.close();
+        try {
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                clientSocket.close();
+            }
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
         if (receiverThread != null) {
             try {
                 receiverThread.join(1000);
@@ -59,24 +58,35 @@ public class MirrorReceiver implements Runnable {
 
     @Override
     public void run() {
-        byte[] buffer = new byte[PACKET_SIZE];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
         while (running.get()) {
             try {
-                socket.receive(packet);
+                System.out.println("Waiting for connection...");
+                clientSocket = serverSocket.accept();
+                System.out.println("Client connected: " + clientSocket.getInetAddress());
 
-                // Copy data to new array to avoid overwriting before processing
-                // In production, use a buffer pool to reduce GC
-                byte[] data = new byte[packet.getLength()];
-                System.arraycopy(packet.getData(), packet.getOffset(), data, 0, packet.getLength());
+                java.io.DataInputStream in = new java.io.DataInputStream(clientSocket.getInputStream());
 
-                // For now, assume each packet is a NAL unit or frame chunk
-                // We pass it directly to decoder
-                if (decoder != null) {
-                    decoder.decode(data);
+                while (running.get() && !clientSocket.isClosed()) {
+                    try {
+                        // Read length (4 bytes)
+                        int length = in.readInt();
+
+                        if (length > BUFFER_SIZE || length < 0) {
+                            System.err.println("Invalid frame length: " + length);
+                            break;
+                        }
+
+                        byte[] data = new byte[length];
+                        in.readFully(data);
+
+                        if (decoder != null) {
+                            decoder.decode(data);
+                        }
+                    } catch (IOException e) {
+                        System.out.println("Client disconnected or error: " + e.getMessage());
+                        break;
+                    }
                 }
-
             } catch (IOException e) {
                 if (running.get()) {
                     e.printStackTrace();

@@ -18,12 +18,13 @@ public class UpdateService {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    public static UpdateResponse checkForUpdates(String currentVersion, String platform, String bearerToken) {
+    public static UpdateResponse checkForUpdates(String currentVersion, String platform, String bearerToken,
+            String language) {
         try {
             String safePlatform = (platform == null || platform.isBlank()) ? "windows" : platform;
 
-            String query = String.format("?version=%s&platform=%s",
-                    encode(currentVersion), encode(safePlatform));
+            String query = String.format("?version=%s&platform=%s&lang=%s",
+                    encode(currentVersion), encode(safePlatform), encode(language));
 
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(BASE_URL + "/api/desktop/update" + query))
@@ -48,7 +49,8 @@ public class UpdateService {
         JsonObject json = null;
         try {
             json = JsonParser.parseString(body).getAsJsonObject();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         String errorCode = json != null && json.has("error") ? json.get("error").getAsString() : "unknown_error";
         boolean sessionRevoked = status == 401 && "session_revoked".equalsIgnoreCase(errorCode);
@@ -60,10 +62,16 @@ public class UpdateService {
         String latestVersion = json.has("latest_version") ? json.get("latest_version").getAsString() : currentVersion;
         boolean mandatory = json.has("mandatory") && json.get("mandatory").getAsBoolean();
         String downloadUrl = json.has("download_url") ? json.get("download_url").getAsString() : "";
-        String releaseNotes = json.has("release_notes") ? json.get("release_notes").getAsString() : "";
+        String downloadUrlDirect = json.has("download_url_direct") ? json.get("download_url_direct").getAsString() : "";
+        String releaseNotes = json.has("release_notes_selected")
+                && !json.get("release_notes_selected").getAsString().isEmpty()
+                        ? json.get("release_notes_selected").getAsString()
+                        : (json.has("release_notes") ? json.get("release_notes").getAsString() : "");
 
         boolean updateAvailable = mandatory || isNewerVersion(latestVersion, currentVersion);
-        return UpdateResponse.success(updateAvailable, mandatory, latestVersion, downloadUrl, releaseNotes, status, sessionRevoked);
+        return UpdateResponse.success(updateAvailable, mandatory, latestVersion, downloadUrl, downloadUrlDirect,
+                releaseNotes, status,
+                sessionRevoked);
     }
 
     private static boolean isNewerVersion(String latest, String current) {
@@ -106,6 +114,7 @@ public class UpdateService {
         private final boolean mandatory;
         private final String latestVersion;
         private final String downloadUrl;
+        private final String downloadUrlDirect;
         private final String releaseNotes;
         private final String error;
         private final String message;
@@ -113,20 +122,22 @@ public class UpdateService {
         private final boolean sessionRevoked;
 
         private UpdateResponse(boolean ok,
-                               boolean updateAvailable,
-                               boolean mandatory,
-                               String latestVersion,
-                               String downloadUrl,
-                               String releaseNotes,
-                               String error,
-                               String message,
-                               int statusCode,
-                               boolean sessionRevoked) {
+                boolean updateAvailable,
+                boolean mandatory,
+                String latestVersion,
+                String downloadUrl,
+                String downloadUrlDirect,
+                String releaseNotes,
+                String error,
+                String message,
+                int statusCode,
+                boolean sessionRevoked) {
             this.ok = ok;
             this.updateAvailable = updateAvailable;
             this.mandatory = mandatory;
             this.latestVersion = latestVersion;
             this.downloadUrl = downloadUrl;
+            this.downloadUrlDirect = downloadUrlDirect;
             this.releaseNotes = releaseNotes;
             this.error = error;
             this.message = message;
@@ -135,23 +146,25 @@ public class UpdateService {
         }
 
         public static UpdateResponse success(boolean updateAvailable,
-                                             boolean mandatory,
-                                             String latestVersion,
-                                             String downloadUrl,
-                                             String releaseNotes,
-                                             int statusCode,
-                                             boolean sessionRevoked) {
-            return new UpdateResponse(true, updateAvailable, mandatory, latestVersion, downloadUrl, releaseNotes,
+                boolean mandatory,
+                String latestVersion,
+                String downloadUrl,
+                String downloadUrlDirect,
+                String releaseNotes,
+                int statusCode,
+                boolean sessionRevoked) {
+            return new UpdateResponse(true, updateAvailable, mandatory, latestVersion, downloadUrl, downloadUrlDirect,
+                    releaseNotes,
                     null, null, statusCode, sessionRevoked);
         }
 
         public static UpdateResponse failed(String error, String message) {
-            return new UpdateResponse(false, false, false, null, null, null,
+            return new UpdateResponse(false, false, false, null, null, null, null,
                     error, message, 0, false);
         }
 
         public static UpdateResponse failed(String error, String message, int statusCode, boolean sessionRevoked) {
-            return new UpdateResponse(false, false, false, null, null, null,
+            return new UpdateResponse(false, false, false, null, null, null, null,
                     error, message, statusCode, sessionRevoked);
         }
 
@@ -173,6 +186,10 @@ public class UpdateService {
 
         public String downloadUrl() {
             return downloadUrl;
+        }
+
+        public String downloadUrlDirect() {
+            return downloadUrlDirect;
         }
 
         public String releaseNotes() {

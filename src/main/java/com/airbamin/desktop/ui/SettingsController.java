@@ -60,10 +60,37 @@ public class SettingsController {
                 themeCombo.setValue("Light");
             }
 
+            // Force ComboBox popups to work with undecorated stage
+            languageCombo.setOnMouseClicked(e -> {
+                if (!languageCombo.isShowing()) {
+                    languageCombo.show();
+                }
+            });
+            themeCombo.setOnMouseClicked(e -> {
+                if (!themeCombo.isShowing()) {
+                    themeCombo.show();
+                }
+            });
+
             autoRefreshCheck.setSelected(LocalStorage.loadAutoRefresh());
             deviceIdField.setText(LocalStorage.loadDeviceId());
-            selectedUploadDir = LocalStorage.loadUploadDirPath()
-                    .orElse(Paths.get(System.getProperty("user.home"), "Documents", "AirBamin_Uploads"));
+            Path oldDefault = Paths.get(System.getProperty("user.home"), "Documents", "AirBamin_Uploads");
+            Path newDefault = Paths.get(System.getProperty("user.home"), "Downloads", "AirBamin", "Transfer");
+
+            selectedUploadDir = LocalStorage.loadUploadDirPath().orElse(null);
+
+            // Migrate to new default if null or using old default
+            if (selectedUploadDir == null || selectedUploadDir.equals(oldDefault)) {
+                selectedUploadDir = newDefault;
+            }
+
+            // Ensure directory exists
+            try {
+                if (!Files.exists(selectedUploadDir)) {
+                    Files.createDirectories(selectedUploadDir);
+                }
+            } catch (Exception ignored) {
+            }
             uploadDirField.setText(selectedUploadDir.toString());
             uploadDirField.setEditable(false);
         });
