@@ -1,0 +1,322 @@
+name: Build Native Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  # ============================================
+  # macOS Builds (Intel and Apple Silicon)
+  # ============================================
+  build-macos:
+    strategy:
+      matrix:
+        include:
+          - os: macos-13
+            arch: x64
+            arch_name: Intel
+          - os: macos-14
+            arch: aarch64
+            arch_name: Apple Silicon
+    
+    runs-on: ${{ matrix.os }}
+    name: macOS (${{ matrix.arch_name }})
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Extract version from pom.xml
+        id: version
+        run: |
+          VERSION=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+      
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+      
+      - name: Prepare distribution
+        run: |
+          mkdir -p dist
+          cp target/airbamin-desktop-*.jar dist/
+      
+      - name: Create ICNS icon
+        run: |
+          ICNS_PATH="src/main/resources/favicon_io/airbamin.icns"
+          PNG_PATH="src/main/resources/favicon_io/android-chrome-512x512.png"
+          
+          if [ ! -f "$ICNS_PATH" ]; then
+            mkdir -p airbamin.iconset
+            sips -z 16 16 "$PNG_PATH" --out "airbamin.iconset/icon_16x16.png"
+            sips -z 32 32 "$PNG_PATH" --out "airbamin.iconset/icon_16x16@2x.png"
+            sips -z 32 32 "$PNG_PATH" --out "airbamin.iconset/icon_32x32.png"
+            sips -z 64 64 "$PNG_PATH" --out "airbamin.iconset/icon_32x32@2x.png"
+            sips -z 128 128 "$PNG_PATH" --out "airbamin.iconset/icon_128x128.png"
+            sips -z 256 256 "$PNG_PATH" --out "airbamin.iconset/icon_128x128@2x.png"
+            sips -z 256 256 "$PNG_PATH" --out "airbamin.iconset/icon_256x256.png"
+            sips -z 512 512 "$PNG_PATH" --out "airbamin.iconset/icon_256x256@2x.png"
+            sips -z 512 512 "$PNG_PATH" --out "airbamin.iconset/icon_512x512.png"
+            cp "$PNG_PATH" "airbamin.iconset/icon_512x512@2x.png"
+            iconutil -c icns airbamin.iconset -o "$ICNS_PATH"
+            rm -rf airbamin.iconset
+          fi
+      
+      - name: Create DMG with jpackage
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          mkdir -p output
+          
+          jpackage \
+            --type dmg \
+            --dest output \
+            --name "Airbamin" \
+            --app-version "$VERSION" \
+            --vendor "Tecbamin" \
+            --input dist \
+            --main-jar "airbamin-desktop-${VERSION}.jar" \
+            --main-class "com.airbamin.desktop.Launcher" \
+            --icon "src/main/resources/favicon_io/airbamin.icns" \
+            --mac-package-identifier "com.tecbamin.airbamin" \
+            --mac-package-name "Airbamin" \
+            --java-options "-Xdock:name=Airbamin" \
+            --java-options "-Dapple.awt.application.name=Airbamin"
+      
+      - name: Add Applications shortcut to DMG
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          DMG_FILE="output/Airbamin-${VERSION}.dmg"
+          FINAL_DMG="output/Airbamin-${VERSION}-${{ matrix.arch }}.dmg"
+          TEMP_DIR=$(mktemp -d)
+          
+          mkdir -p "$TEMP_DIR/mount"
+          hdiutil attach "$DMG_FILE" -mountpoint "$TEMP_DIR/mount" -nobrowse -quiet
+          
+          mkdir -p "$TEMP_DIR/staging"
+          cp -R "$TEMP_DIR/mount/Airbamin.app" "$TEMP_DIR/staging/"
+          ln -s /Applications "$TEMP_DIR/staging/Applications"
+          
+          hdiutil detach "$TEMP_DIR/mount" -quiet
+          rm -f "$DMG_FILE"
+          
+          hdiutil create -volname "Airbamin" \
+            -srcfolder "$TEMP_DIR/staging" \
+            -ov -format UDZO \
+            "$FINAL_DMG"
+          
+          rm -rf "$TEMP_DIR"
+      
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: Airbamin-macOS-${{ matrix.arch }}
+          path: output/Airbamin-*.dmg
+
+  # ============================================
+  # Windows Builds (EXE and MSI)
+  # ============================================
+  build-windows:
+    runs-on: windows-latest
+    name: Windows (EXE + MSI)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Extract version from pom.xml
+        id: version
+        run: |
+          [xml]$pom = Get-Content pom.xml
+          $version = $pom.project.version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Building version: $version"
+        shell: pwsh
+      
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+      
+      - name: Prepare distribution
+        run: |
+          mkdir dist
+          copy target\airbamin-desktop-*.jar dist\
+        shell: cmd
+      
+      - name: Create EXE installer
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          mkdir output
+          
+          jpackage `
+            --type exe `
+            --dest output `
+            --name "Airbamin" `
+            --app-version "$version" `
+            --vendor "Tecbamin" `
+            --input dist `
+            --main-jar "airbamin-desktop-$version.jar" `
+            --main-class "com.airbamin.desktop.Launcher" `
+            --icon "src\main\resources\favicon_io\favicon.ico" `
+            --win-dir-chooser `
+            --win-menu `
+            --win-menu-group "Airbamin" `
+            --win-shortcut `
+            --win-shortcut-prompt `
+            --win-upgrade-uuid "5465c87f-3922-4c23-88ee-b388ca6521d8"
+        shell: pwsh
+      
+      - name: Create MSI installer
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          
+          jpackage `
+            --type msi `
+            --dest output `
+            --name "Airbamin" `
+            --app-version "$version" `
+            --vendor "Tecbamin" `
+            --input dist `
+            --main-jar "airbamin-desktop-$version.jar" `
+            --main-class "com.airbamin.desktop.Launcher" `
+            --icon "src\main\resources\favicon_io\favicon.ico" `
+            --win-dir-chooser `
+            --win-menu `
+            --win-menu-group "Airbamin" `
+            --win-shortcut `
+            --win-upgrade-uuid "5465c87f-3922-4c23-88ee-b388ca6521d8"
+        shell: pwsh
+      
+      - name: Upload Windows Installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: Airbamin-Windows
+          path: output/Airbamin-*.*
+
+  # ============================================
+  # Linux Builds (DEB and RPM)
+  # ============================================
+  build-linux:
+    runs-on: ubuntu-latest
+    name: Linux (DEB + RPM)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Extract version from pom.xml
+        id: version
+        run: |
+          VERSION=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+      
+      - name: Install RPM tools
+        run: sudo apt-get update && sudo apt-get install -y rpm
+      
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+      
+      - name: Prepare distribution
+        run: |
+          mkdir -p dist
+          cp target/airbamin-desktop-*.jar dist/
+      
+      - name: Create DEB package
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          mkdir -p output
+          
+          jpackage \
+            --type deb \
+            --dest output \
+            --name "airbamin" \
+            --app-version "$VERSION" \
+            --vendor "Tecbamin" \
+            --input dist \
+            --main-jar "airbamin-desktop-${VERSION}.jar" \
+            --main-class "com.airbamin.desktop.Launcher" \
+            --icon "src/main/resources/favicon_io/android-chrome-512x512.png" \
+            --linux-shortcut \
+            --linux-menu-group "Utility" \
+            --linux-app-category "Utility" \
+            --linux-deb-maintainer "support@tecbamin.com" \
+            --linux-package-name "airbamin"
+      
+      - name: Create RPM package
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          
+          jpackage \
+            --type rpm \
+            --dest output \
+            --name "airbamin" \
+            --app-version "$VERSION" \
+            --vendor "Tecbamin" \
+            --input dist \
+            --main-jar "airbamin-desktop-${VERSION}.jar" \
+            --main-class "com.airbamin.desktop.Launcher" \
+            --icon "src/main/resources/favicon_io/android-chrome-512x512.png" \
+            --linux-shortcut \
+            --linux-menu-group "Utility" \
+            --linux-app-category "Utility" \
+            --linux-rpm-license-type "Proprietary" \
+            --linux-package-name "airbamin"
+      
+      - name: Upload Linux Packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: Airbamin-Linux
+          path: output/airbamin*
+
+  # ============================================
+  # Create GitHub Release with all artifacts
+  # ============================================
+  create-release:
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Display artifacts
+        run: ls -R artifacts
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/Airbamin-macOS-x64/*.dmg
+            artifacts/Airbamin-macOS-aarch64/*.dmg
+            artifacts/Airbamin-Windows/*.exe
+            artifacts/Airbamin-Windows/*.msi
+            artifacts/Airbamin-Linux/*.deb
+            artifacts/Airbamin-Linux/*.rpm
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

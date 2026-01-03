@@ -15,10 +15,32 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        // Set macOS dock icon and app name
+        setMacOSDockIcon();
+
         loadFonts();
 
         // Use Undecorated Stage for custom title bar
         stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+
+        // --- MIGRATION: Force update default upload directory if it's the old default
+        // ---
+        try {
+            java.nio.file.Path oldDefault = java.nio.file.Paths.get(System.getProperty("user.home"), "Documents",
+                    "AirBamin_Uploads");
+            java.nio.file.Path newDefault = java.nio.file.Paths.get(System.getProperty("user.home"), "Downloads",
+                    "AirBamin", "Transfer");
+
+            java.util.Optional<java.nio.file.Path> currentPath = LocalStorage.loadUploadDirPath();
+
+            if (currentPath.isPresent() && currentPath.get().equals(oldDefault)) {
+                LocalStorage.saveUploadDir(newDefault);
+                System.out.println("Migrated upload directory from Documents to Downloads/AirBamin/Transfer");
+            }
+        } catch (Exception e) {
+            System.err.println("Migration check failed: " + e.getMessage());
+        }
+        // -------------------------------------------------------------------------------
 
         // 1. Check Language
         String lang = LocalStorage.loadLanguage();
@@ -35,20 +57,26 @@ public class Main extends Application {
             mainLayout.setCenter(root);
 
             Scene scene = new Scene(mainLayout, 600, 400);
-            applyTheme(scene);
 
-            // Enable resizing
-            com.airbamin.desktop.ui.ResizeHelper.addResizeListener(stage);
+            // Make layout fill the entire scene (for fullscreen support)
+            mainLayout.prefWidthProperty().bind(scene.widthProperty());
+            mainLayout.prefHeightProperty().bind(scene.heightProperty());
+
+            applyTheme(scene);
 
             stage.setTitle("AirBamin");
             setAppIcon(stage);
             stage.setScene(scene);
+
+            // Enable resizing
+            com.airbamin.desktop.ui.ResizeHelper.addResizeListener(stage);
+
             stage.show();
             return;
         }
 
         // 2. Load Bundle based on language
-        java.util.Locale locale = java.util.Locale.of(lang.equals("ar") ? "ar" : "en");
+        java.util.Locale locale = new java.util.Locale(lang.equals("ar") ? "ar" : "en");
         java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("com.airbamin.desktop.messages_" + lang,
                 locale);
 
@@ -91,10 +119,25 @@ public class Main extends Application {
         // Wrap with Title Bar
         javafx.scene.layout.BorderPane mainLayout = new javafx.scene.layout.BorderPane();
         FXMLLoader titleLoader = new FXMLLoader(getClass().getResource("/components/TitleBar.fxml"));
-        mainLayout.setTop(titleLoader.load());
+        javafx.scene.Node titleBarNode = titleLoader.load();
+        com.airbamin.desktop.ui.TitleBarController titleController = titleLoader.getController();
+        titleController.setTitle(bundle.getString("app.title"));
+
+        mainLayout.setTop(titleBarNode);
         mainLayout.setCenter(contentRoot);
 
         Scene scene = new Scene(mainLayout, 900, 650);
+
+        // Set scene fill to match app background (prevents black bars in fullscreen)
+        scene.setFill(javafx.scene.paint.Color.web("#1f1f1f"));
+
+        // Make layout fill the entire scene (for fullscreen support)
+        mainLayout.setMinWidth(0);
+        mainLayout.setMinHeight(0);
+        mainLayout.setMaxWidth(Double.MAX_VALUE);
+        mainLayout.setMaxHeight(Double.MAX_VALUE);
+        mainLayout.prefWidthProperty().bind(scene.widthProperty());
+        mainLayout.prefHeightProperty().bind(scene.heightProperty());
 
         // Apply RTL if Arabic
         if (lang.equals("ar")) {
@@ -103,12 +146,13 @@ public class Main extends Application {
 
         applyTheme(scene);
 
-        // Enable resizing
-        com.airbamin.desktop.ui.ResizeHelper.addResizeListener(stage);
-
         stage.setTitle(bundle.getString("app.title"));
         setAppIcon(stage);
         stage.setScene(scene);
+
+        // Enable resizing
+        com.airbamin.desktop.ui.ResizeHelper.addResizeListener(stage);
+
         stage.show();
     }
 
@@ -128,14 +172,58 @@ public class Main extends Application {
 
     private void loadFonts() {
         try {
-            Font.loadFont(getClass().getResourceAsStream("/fonts/Cairo-Regular.ttf"), 12);
-            Font.loadFont(getClass().getResourceAsStream("/fonts/Cairo-Bold.ttf"), 12);
-            Font.loadFont(getClass().getResourceAsStream("/fonts/Cairo-SemiBold.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/BalooBhaijaan2-Bold.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/BalooBhaijaan2-ExtraBold.ttf"), 12);
         } catch (Exception ignored) {
         }
     }
 
+    private void setMacOSDockIcon() {
+        // Set macOS dock icon using java.awt.Taskbar API
+        try {
+            if (java.awt.Taskbar.isTaskbarSupported()) {
+                java.awt.Taskbar taskbar = java.awt.Taskbar.getTaskbar();
+                if (taskbar.isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+                    try (var iconStream = getClass().getResourceAsStream("/favicon_io/android-chrome-512x512.png")) {
+                        if (iconStream != null) {
+                            java.awt.Image awtImage = javax.imageio.ImageIO.read(iconStream);
+                            taskbar.setIconImage(awtImage);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not set dock icon: " + e.getMessage());
+        }
+
+        // Set app name in macOS menu bar
+        System.setProperty("apple.awt.application.name", "Airbamin");
+    }
+
+    @Override
+    public void stop() throws Exception {
+        System.out.println("Application is shutting down...");
+
+        // Stop the local transfer server
+        try {
+            com.airbamin.desktop.transfer.LocalTransferServer.getInstance().stop();
+        } catch (Exception e) {
+            System.err.println("Error stopping transfer server: " + e.getMessage());
+        }
+
+        super.stop();
+
+        // Force exit to ensure all daemon threads are terminated
+        System.exit(0);
+    }
+
     public static void main(String[] args) {
-        launch();
+        // Set macOS app name (must be set BEFORE launching JavaFX)
+        System.setProperty("apple.awt.application.name", "Airbamin");
+
+        // Fix Arabic letters in JavaFX
+        System.setProperty("prism.lcdtext", "false");
+        System.setProperty("prism.text", "t2k");
+        launch(args);
     }
 }
