@@ -40,3 +40,11 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Installers and binaries
+output/
+*.dmg
+*.aab
+*.ipa
+*.apk
+*.zip

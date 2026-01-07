@@ -1,297 +1,425 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
-import { SelectedFile } from '../services/fileService';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from '../components/CustomFeather';
 import { useTheme } from '../contexts/ThemeContext';
+import { useConnection } from '../contexts/ConnectionContext';
 import i18n from '../services/i18n';
-import { ThemeColors } from '../constants/Colors';
+import { ThemeColors, Fonts } from '../constants/Colors';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 
-interface FilePickerScreenProps {
-    files: SelectedFile[];
-    onAddFiles: () => void;
-    onRemoveFile: (index: number) => void;
-    onUpload: () => void;
-    isUploading: boolean;
-    progress: number;
-    onBack: () => void;
+type Props = NativeStackScreenProps<RootStackParamList, 'Files'>;
+
+interface FileItem {
+    uri: string;
+    name: string;
+    size?: number;
+    mimeType?: string;
 }
 
-export default function FilePickerScreen({
-    files,
-    onAddFiles,
-    onRemoveFile,
-    onUpload,
-    isUploading,
-    progress,
-    onBack,
-}: FilePickerScreenProps) {
-    const { colors, isDark } = useTheme();
-    const styles = getStyles(colors, isDark);
+export default function FilePickerScreen({ navigation }: Props) {
+    const { colors, isDark, language } = useTheme();
+    const { isConnected, connectedIP } = useConnection();
+    const [files, setFiles] = useState<FileItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [showTypeSelect, setShowTypeSelect] = useState(false);
 
-    const getFileIcon = (type: string) => {
-        if (type.includes('image')) return 'IMG';
-        if (type.includes('video')) return 'VID';
-        if (type.includes('document') || type.includes('pdf')) return 'DOC';
-        return 'FILE';
+    const handleAddPress = () => {
+        Alert.alert(
+            i18n.t('select_type'),
+            i18n.t('choose_source'),
+            [
+                {
+                    text: i18n.t('documents'),
+                    onPress: handlePickDocuments,
+                    style: 'default',
+                },
+                {
+                    text: i18n.t('photos_videos'),
+                    onPress: handlePickImages,
+                    style: 'default',
+                },
+                {
+                    text: i18n.t('cancel'),
+                    style: 'cancel',
+                },
+            ]
+        );
     };
 
-    const formatFileSize = (bytes: number): string => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    const handlePickDocuments = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: '*/*',
+                multiple: true,
+                copyToCacheDirectory: true
+            });
+
+            if (!result.canceled && result.assets) {
+                const newFiles = result.assets.map(asset => ({
+                    uri: asset.uri,
+                    name: asset.name,
+                    size: asset.size,
+                    mimeType: asset.mimeType
+                }));
+                setFiles(prev => [...prev, ...newFiles]);
+            }
+        } catch (err) {
+            console.error('Error picking files:', err);
+            Alert.alert(i18n.t('error'), 'Failed to pick files');
+        }
     };
+
+    const handlePickImages = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (permissionResult.granted === false) {
+                Alert.alert(i18n.t('permission_denied'), i18n.t('permission_msg'));
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                allowsMultipleSelection: true,
+                quality: 1,
+            });
+
+            if (!result.canceled) {
+                const newFiles = result.assets.map(asset => {
+                    const fileName = asset.fileName || asset.uri.split('/').pop() || 'image.jpg';
+                    return {
+                        uri: asset.uri,
+                        name: fileName,
+                        size: asset.fileSize,
+                        mimeType: asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg')
+                    };
+                });
+                setFiles(prev => [...prev, ...newFiles]);
+            }
+        } catch (err) {
+            console.error('Error picking images:', err);
+            Alert.alert(i18n.t('error'), 'Failed to pick images');
+        }
+    };
+
+    const handleRemoveFile = (index: number) => {
+        setFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleUpload = async () => {
+        if (files.length === 0) return;
+        if (!isConnected || !connectedIP) {
+            Alert.alert(i18n.t('error'), 'Please connect to your PC first');
+            return;
+        }
+
+        setLoading(true);
+        setUploadProgress(0);
+
+        try {
+            const batchId = Date.now().toString();
+            const baseUrl = `http://${connectedIP}`;
+
+            console.log('[UPLOAD] Starting upload to:', baseUrl);
+            console.log('[UPLOAD] Files to upload:', files.length);
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                console.log(`[UPLOAD] Uploading file ${i + 1}/${files.length}:`, file.name);
+
+                // Fetch the file as blob
+                const response = await fetch(file.uri);
+                if (!response.ok) {
+                    throw new Error(`Failed to read file: ${file.name}`);
+                }
+                const blob = await response.blob();
+                console.log(`[UPLOAD] File blob size: ${blob.size} bytes`);
+
+                // Upload to desktop's /upload endpoint
+                const uploadUrl = `${baseUrl}/upload?filename=${encodeURIComponent(file.name)}&batchId=${batchId}&index=${i + 1}&total=${files.length}`;
+                console.log('[UPLOAD] Upload URL:', uploadUrl);
+
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.mimeType || 'application/octet-stream',
+                    },
+                    body: blob,
+                });
+
+                if (!uploadResponse.ok) {
+                    const errorText = await uploadResponse.text();
+                    console.error('[UPLOAD] Upload failed:', uploadResponse.status, errorText);
+                    throw new Error(`Upload failed for ${file.name}: ${uploadResponse.status}`);
+                }
+
+                const responseText = await uploadResponse.text();
+                console.log(`[UPLOAD] Upload response for ${file.name}:`, responseText);
+
+                // Update progress
+                setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+            }
+
+            console.log('[UPLOAD] All files uploaded successfully');
+            Alert.alert(i18n.t('success'), i18n.t('upload_complete'));
+            setFiles([]);
+            setUploadProgress(0);
+            navigation.goBack();
+        } catch (error: any) {
+            console.error('[UPLOAD] Upload error:', error);
+            Alert.alert(
+                i18n.t('error'),
+                `Upload failed:\n\n${error.message || 'Unknown error'}\n\nCheck:\n1. PC is connected\n2. Desktop app is running\n3. Same WiFi network`
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatFileSize = (bytes?: number) => {
+        if (!bytes) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    const styles = getStyles(colors, isDark, language);
+
+    const renderFileItem = ({ item, index }: { item: FileItem; index: number }) => (
+        <View style={styles.fileItem}>
+            <View style={styles.fileInfo}>
+                <Icon name="file" size={24} color={colors.primary} />
+                <View style={styles.fileDetails}>
+                    <Text style={styles.fileName} numberOfLines={1}>{item.name}</Text>
+                    {item.size && (
+                        <Text style={styles.fileSize}>{formatFileSize(item.size)}</Text>
+                    )}
+                </View>
+            </View>
+            <TouchableOpacity onPress={() => handleRemoveFile(index)} style={styles.removeButton}>
+                <Icon name="x" size={20} color={colors.error} />
+            </TouchableOpacity>
+        </View>
+    );
 
     return (
-        <View style={styles.container}>
-            <View style={styles.topBar}>
-                <TouchableOpacity onPress={onBack} style={styles.backButton}>
-                    <Text style={styles.backButtonText}>←</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>{i18n.t('select_type')}</Text>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <View style={{ width: 40 }} />
+                <Text style={styles.headerTitle}>{i18n.t('select_files')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <TouchableOpacity style={styles.addButton} onPress={onAddFiles}>
-                <Text style={styles.addButtonText}>{i18n.t('tap_plus')}</Text>
-            </TouchableOpacity>
-
-            {files.length > 0 ? (
-                <>
-                    <View style={styles.header}>
-                        <Text style={styles.headerText}>
-                            {files.length} {i18n.t('files_selected')}
-                        </Text>
-                        <TouchableOpacity onPress={() => files.forEach((_, i) => onRemoveFile(0))}>
-                            <Text style={styles.clearText}>{i18n.t('clear')}</Text>
-                        </TouchableOpacity>
+            <View style={styles.content}>
+                {files.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <Icon name="upload-cloud" size={64} color={colors.textSecondary} style={{ opacity: 0.3, marginBottom: 24 }} />
+                        <Text style={styles.emptyText}>{i18n.t('no_files_selected')}</Text>
+                        <Text style={styles.emptyHint}>{i18n.t('tap_plus_to_add')}</Text>
                     </View>
+                ) : (
+                    <>
+                        <FlatList
+                            data={files}
+                            renderItem={renderFileItem}
+                            keyExtractor={(item, index) => index.toString()}
+                            contentContainerStyle={styles.listContent}
+                        />
 
-                    <ScrollView style={styles.fileList}>
-                        {files.map((file, index) => (
-                            <View key={index} style={styles.fileItem}>
-                                <View style={styles.fileInfo}>
-                                    <Text style={styles.fileIcon}>{getFileIcon(file.type)}</Text>
-                                    <View style={styles.fileDetails}>
-                                        <Text style={styles.fileName} numberOfLines={1}>
-                                            {file.name}
-                                        </Text>
-                                        <Text style={styles.fileSize}>
-                                            {formatFileSize(file.size)}
-                                        </Text>
+                        <View style={styles.uploadButtonContainer}>
+                            {loading && uploadProgress > 0 && (
+                                <View style={styles.progressContainer}>
+                                    <Text style={styles.progressText}>{uploadProgress}%</Text>
+                                    <View style={styles.progressBar}>
+                                        <View style={[styles.progressFill, { width: `${uploadProgress}%`, backgroundColor: colors.primary }]} />
                                     </View>
                                 </View>
-                                <TouchableOpacity
-                                    style={styles.removeButton}
-                                    onPress={() => onRemoveFile(index)}
-                                >
-                                    <Text style={styles.removeButtonText}>✕</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                    </ScrollView>
+                            )}
 
-                    {isUploading ? (
-                        <View style={styles.progressContainer}>
-                            <Text style={styles.progressText}>
-                                {i18n.t('uploading')} {Math.round(progress)}%
-                            </Text>
-                            <View style={styles.progressBar}>
-                                <View
-                                    style={[styles.progressFill, { width: `${progress}%` }]}
-                                />
-                            </View>
+                            <TouchableOpacity
+                                style={[styles.uploadButton, { backgroundColor: colors.primary }]}
+                                onPress={handleUpload}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#fff" size="small" />
+                                ) : (
+                                    <View style={styles.uploadButtonContent}>
+                                        <Icon name="upload" size={24} color="#fff" style={{ marginRight: 12 }} />
+                                        <Text style={styles.uploadButtonText}>
+                                            {i18n.t('upload_to_pc')} ({files.length})
+                                        </Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
                         </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.uploadButton}
-                            onPress={onUpload}
-                        >
-                            <Text style={styles.uploadButtonText}>
-                                {i18n.t('upload')} {files.length} {i18n.t('files_selected')}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </>
-            ) : (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyIcon}>[ ]</Text>
-                    <Text style={styles.emptyText}>{i18n.t('no_files')}</Text>
-                    <Text style={styles.emptyHint}>
-                        {i18n.t('tap_plus')}
-                    </Text>
-                </View>
-            )}
-        </View>
+                    </>
+                )}
+            </View>
+
+            <TouchableOpacity style={styles.fab} onPress={handleAddPress}>
+                <Icon name="plus" size={32} color="#fff" />
+            </TouchableOpacity>
+        </SafeAreaView>
     );
 }
 
-const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
-        paddingTop: 60,
         backgroundColor: colors.background,
     },
-    topBar: {
-        flexDirection: 'row',
+    header: {
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
     },
     backButton: {
         padding: 8,
     },
-    backButtonText: {
-        fontSize: 24,
-        color: colors.primary,
-        fontWeight: 'bold',
-    },
-    title: {
+    headerTitle: {
         fontSize: 20,
-        fontWeight: '800',
+        fontFamily: Fonts.bold,
         color: colors.text,
     },
-    addButton: {
-        backgroundColor: colors.primary,
-        padding: 16,
-        borderRadius: 14,
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    addButtonText: {
-        color: '#fff',
-        fontSize: 17,
-        fontWeight: '700',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    headerText: {
-        color: colors.text,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    clearText: {
-        color: colors.error,
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    fileList: {
+    content: {
         flex: 1,
-        marginBottom: 20,
+    },
+    listContent: {
+        padding: 20,
+        paddingBottom: 100,
     },
     fileItem: {
-        backgroundColor: colors.card,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        flexDirection: 'row',
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        backgroundColor: colors.card,
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 12,
         borderWidth: 1,
         borderColor: colors.border,
     },
     fileInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
         flex: 1,
-    },
-    fileIcon: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: colors.primary,
-        marginRight: 12,
-        width: 32,
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+        alignItems: 'center',
+        gap: 12,
     },
     fileDetails: {
         flex: 1,
     },
     fileName: {
+        fontSize: 16,
+        fontFamily: Fonts.regular,
         color: colors.text,
-        fontSize: 15,
-        fontWeight: '600',
         marginBottom: 4,
-        textAlign: 'left',
+        textAlign: language === 'ar' ? 'right' : 'left',
     },
     fileSize: {
+        fontSize: 14,
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
-        fontSize: 13,
-        textAlign: 'left',
+        textAlign: language === 'ar' ? 'right' : 'left',
     },
     removeButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#ffe5e5',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginLeft: 12,
-    },
-    removeButtonText: {
-        color: colors.error,
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    uploadButton: {
-        backgroundColor: colors.secondary,
-        padding: 20,
-        borderRadius: 14,
-        alignItems: 'center',
-    },
-    uploadButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '800',
-    },
-    progressContainer: {
-        padding: 20,
-        backgroundColor: colors.card,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    progressText: {
-        color: colors.text,
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    progressBar: {
-        height: 8,
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#e5e5ea',
-        borderRadius: 4,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: colors.secondary,
+        padding: 8,
     },
     emptyState: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    emptyIcon: {
-        fontSize: 64,
-        marginBottom: 16,
-        color: colors.textSecondary,
-        opacity: 0.3,
+        padding: 40,
     },
     emptyText: {
-        color: colors.text,
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: Fonts.bold,
+        color: colors.text,
         marginBottom: 8,
     },
     emptyHint: {
+        fontSize: 16,
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
-        fontSize: 14,
         textAlign: 'center',
-        paddingHorizontal: 40,
+    },
+    fab: {
+        position: 'absolute',
+        right: 20,
+        bottom: 130,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    uploadButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 16,
+        paddingBottom: 20,
+        backgroundColor: colors.background,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+    },
+    progressContainer: {
+        marginBottom: 12,
+    },
+    progressText: {
+        fontSize: 14,
+        fontFamily: Fonts.regular,
+        color: colors.text,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    progressBar: {
+        height: 8,
+        backgroundColor: colors.inputBg,
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        borderRadius: 4,
+    },
+    uploadButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+    },
+    uploadButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    uploadButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontFamily: Fonts.bold,
     },
 });
+
+

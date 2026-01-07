@@ -1,257 +1,593 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AirBamin – Phone to PC Upload</title>
-
-<style>
-    /* ---------------------- GLOBAL ---------------------- */
-    body {
-        margin: 0;
-        font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
-        background: #0e0f12;
-        color: #fff;
-    }
-
-    /* Fluent background */
-    .background {
-        width: 100%;
-        min-height: 100vh;
-        background: linear-gradient(145deg, #1b2330, #11141b, #1c2331);
-        background-size: 250% 250%;
-        animation: moveBg 16s infinite ease;
-        padding: 50px 20px;
-    }
-
-    @keyframes moveBg {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    .container {
-        width: 95%;
-        max-width: 1300px;
-        margin: auto;
-    }
-
-    .title {
-        font-size: 42px;
-        font-weight: 750;
-        margin-bottom: 20px;
-        color: #ffffff;
-        letter-spacing: -0.5px;
-    }
-
-    /* Acrylic Card */
-    .card {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 20px;
-        padding: 40px;
-        backdrop-filter: blur(25px);
-        box-shadow: 0 28px 48px rgba(0,0,0,0.35);
-    }
-
-    label {
-        display: block;
-        font-size: 16px;
-        opacity: 0.9;
-        margin-bottom: 6px;
-    }
-
-    input[type="text"] {
-        width: 100%;
-        background: #161a23;
-        color: #fff;
-        border: 1px solid #2f3442;
-        padding: 15px 16px;
-        font-size: 15px;
-        border-radius: 10px;
-        outline: none;
-        transition: .25s;
-    }
-
-    input[type="text"]:focus {
-        border-color: #6a96ff;
-        background: #1d2230;
-    }
-
-    .btn-row {
-        display: flex;
-        gap: 12px;
-        margin-top: 12px;
-    }
-
-    button {
-        background: #26304a;
-        border: 1px solid #36466a;
-        padding: 11px 20px;
-        border-radius: 8px;
-        color: #fff;
-        font-size: 14px;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    button:hover {
-        background: #324063;
-        border-color: #4c5e8c;
-    }
-
-    .info {
-        font-size: 15px;
-        margin-top: 18px;
-        opacity: 0.85;
-        line-height: 1.6;
-    }
-
-    /* Layout */
-    .row {
-        display: flex;
-        gap: 30px;
-        margin-top: 35px;
-        flex-wrap: wrap;
-    }
-
-    .info-box {
-        flex: 1;
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.12);
-        padding: 24px;
-        border-radius: 14px;
-    }
-
-    .info-box h3 {
-        margin-top: 0;
-        font-size: 24px;
-        font-weight: 650;
-    }
-
-    .info-box p, .info-box ul {
-        font-size: 15px;
-        opacity: 0.85;
-        line-height: 1.7;
-    }
-
-    .qr-box {
-        width: 280px;
-        min-width: 280px;
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        padding: 20px;
-        border-radius: 14px;
-        text-align: center;
-    }
-
-    .qr-box img {
-        width: 100%;
-        border-radius: 12px;
-    }
-
-    /* Progress Bar */
-    .progress {
-        width: 100%;
-        height: 14px;
-        background: #1b2230;
-        border-radius: 12px;
-        margin: 25px 0;
-        overflow: hidden;
-        border: 1px solid #2c3448;
-    }
-
-    .progress-fill {
-        height: 100%;
-        width: 45%;
-        background: linear-gradient(90deg, #6a9dff, #bb63ff);
-        animation: loading 3s infinite;
-    }
-
-    @keyframes loading {
-        0% {transform: translateX(-100%);}
-        100% {transform: translateX(200%);}
-    }
-
-    .path {
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.12);
-        padding: 15px 18px;
-        border-radius: 10px;
-        font-size: 14px;
-        overflow-x: auto;
-        margin-top: 10px;
-        white-space: nowrap;
-    }
-
-    @media (max-width: 900px) {
-        .qr-box {
-            margin: auto;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirBamin — PC + Phone</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05080f;
+            --panel: rgba(255, 255, 255, 0.06);
+            --panel-strong: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #e8edf7;
+            --muted: #9aa7bf;
+            --accent: #3be0a6;
+            --accent-2: #ffb347;
+            --card: #0b1220;
+            --shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
         }
-        .title {
-            font-size: 32px;
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(59, 224, 166, 0.08), transparent 24%),
+                        radial-gradient(circle at 80% 0%, rgba(255, 179, 71, 0.09), transparent 20%),
+                        linear-gradient(145deg, #0b1220, #05080f 60%, #09142a);
+            color: var(--text);
+            font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 60px;
         }
-    }
-</style>
+
+        .container {
+            width: 92%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .blur-ball {
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            filter: blur(120px);
+            opacity: 0.45;
+            border-radius: 50%;
+        }
+
+        .blur-1 { background: #3be0a6; top: -80px; left: -120px; }
+        .blur-2 { background: #4b7bff; bottom: -120px; right: -80px; }
+        .blur-3 { background: #ffb347; top: 20%; right: 12%; }
+
+        header {
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(16px);
+            background: rgba(5, 8, 15, 0.7);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #3be0a6, #4b7bff);
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            color: #041628;
+            box-shadow: 0 12px 30px rgba(59, 224, 166, 0.35);
+        }
+
+        nav a {
+            color: var(--muted);
+            text-decoration: none;
+            margin-left: 18px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover { color: var(--text); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: 1px solid transparent;
+            text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .btn.primary {
+            background: linear-gradient(120deg, #3be0a6, #4b7bff);
+            color: #041628;
+            box-shadow: 0 16px 40px rgba(59, 224, 166, 0.25);
+        }
+
+        .btn.primary:hover { transform: translateY(-2px); }
+
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--border);
+            color: var(--text);
+        }
+
+        .btn.secondary:hover { border-color: rgba(255, 255, 255, 0.3); }
+
+        .btn.small { padding: 10px 14px; font-size: 14px; }
+
+        .hero {
+            padding: 52px 0 34px;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+            font-size: clamp(32px, 4vw, 48px);
+            margin: 0 0 16px;
+            letter-spacing: -0.6px;
+        }
+
+        .lead {
+            margin: 0 0 22px;
+            font-size: 17px;
+            line-height: 1.6;
+            color: var(--muted);
+            max-width: 660px;
+        }
+
+        .cta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: 14px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hero-panels {
+            display: grid;
+            gap: 14px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel h3 {
+            margin: 0 0 6px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .panel ul {
+            padding-left: 16px;
+            margin: 10px 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-top: 36px;
+            padding: 26px 0 6px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section h2 {
+            margin: 0;
+            font-size: 26px;
+            font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card p {
+            margin: 0 0 12px;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0 14px;
+        }
+
+        .chip {
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 14px;
+        }
+
+        .feature {
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .feature strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+
+        .feature span {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .steps {
+            display: grid;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .step {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+        }
+
+        .step-number {
+            width: 26px;
+            height: 26px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #3be0a6, #4b7bff);
+            color: #041628;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .faq {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .faq-item {
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .faq-item strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 18px 0 10px;
+            color: var(--muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; padding-top: 28px; }
+            .nav { flex-wrap: wrap; gap: 10px; }
+            nav { width: 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; }
+            nav a { margin-left: 0; margin-right: 18px; }
+            header { position: sticky; top: 0; }
+        }
+    </style>
 </head>
-
 <body>
+    <div class="backdrop" aria-hidden="true">
+        <div class="blur-ball blur-1"></div>
+        <div class="blur-ball blur-2"></div>
+        <div class="blur-ball blur-3"></div>
+    </div>
 
-<div class="background">
+    <header>
+        <div class="container nav">
+            <div class="brand">
+                <div class="brand-mark">AB</div>
+                <div>AirBamin</div>
+            </div>
+            <nav>
+                <a href="#apps">Apps</a>
+                <a href="#features">Features</a>
+                <a href="#how">How it works</a>
+                <a href="#support">Support</a>
+                <a class="btn small secondary" href="downloads/AirBamin-1.2.0.exe">Download for Windows</a>
+            </nav>
+        </div>
+    </header>
+
     <div class="container">
-
-        <div class="title">AirBamin – Phone to PC Upload</div>
-
-        <div class="card">
-
-            <label>Share this upload link with your phone</label>
-            <input type="text" value="http://192.168.1.11:9099" readonly />
-
-            <div class="btn-row">
-                <button>Copy</button>
-                <button>Refresh</button>
+        <section class="hero">
+            <div>
+                <div class="eyebrow">
+                    <span>PC v1.2.0</span>
+                    <span>Mobile v1.0.0</span>
+                    <span>New: Mirror + QR pairing</span>
+                </div>
+                <h1>AirBamin for PC + Phone</h1>
+                <p class="lead">
+                    Move files between your phone and computer in seconds, watch uploads live, and mirror your screen without cables or accounts. Built for local Wi‑Fi, fast handshakes, and privacy.
+                </p>
+                <div class="cta-row">
+                    <a class="btn primary" href="downloads/AirBamin-1.2.0.exe">Download for Windows</a>
+                    <a class="btn secondary" href="#mobile">Get the mobile app</a>
+                </div>
+                <div class="meta">
+                    <span>Local-first • keeps files on your network</span>
+                    <span>English + Arabic UI</span>
+                    <span>Dark & light themes</span>
+                </div>
             </div>
 
-            <div class="info">
-                Local IP: <b>192.168.1.11:9099</b><br>
-                Connected Phone: <b>192.168.1.2</b>
-            </div>
-
-            <div class="row">
-                <div class="info-box">
-                    <h3>How it works</h3>
-                    <p>
-                        Your phone can open the link above or scan the QR code.  
-                        It will instantly load the AirBamin upload page where you can choose files
-                        and send them directly to your PC.
-                    </p>
-
-                    <h4 style="margin-top:18px; font-size:18px;">Tips</h4>
+            <div class="hero-panels">
+                <div class="panel">
+                    <h3>Desktop 1.2.0</h3>
+                    <div class="badge">Windows · auto-updates · license aware</div>
                     <ul>
-                        <li>If you switch Wi-Fi/hotspot, tap Refresh to update the IP.</li>
-                        <li>No apps or setup required — open the link and upload.</li>
-                        <li>Keep the phone tab open during upload for best speed.</li>
+                        <li>Transfer Center with live QR/link sharing and mirrored upload progress.</li>
+                        <li>Send files to phone, open upload folder instantly, bilingual UI.</li>
+                        <li>New Screen Mirroring window with decoder for smoother playback.</li>
                     </ul>
                 </div>
-
-                <div class="qr-box">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=http://192.168.1.11:9099">
+                <div class="panel">
+                    <h3>Mobile 1.0.0</h3>
+                    <div class="badge">iOS + Android · QR connect · host/join</div>
+                    <ul>
+                        <li>Connect to PC via QR, push multiple files, and track status live.</li>
+                        <li>Phone-to-phone host & join mode with 6-digit session code.</li>
+                        <li>Mirror mode (beta) plus theme toggle, Arabic + English strings.</li>
+                    </ul>
                 </div>
             </div>
+        </section>
 
-            <h3 style="margin-top:40px; font-size:24px; font-weight:650;">Upload progress</h3>
-            <div class="progress"><div class="progress-fill"></div></div>
-
-            <div class="info">
-                Connected Phone: <b>192.168.1.2</b>
+        <section id="apps" class="section">
+            <div class="section-header">
+                <h2>The two apps</h2>
             </div>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>AirBamin for PC</h3>
+                    <p>Full desktop experience with license handling, auto-update checks, and a refreshed glass UI.</p>
+                    <div class="chip-row">
+                        <span class="chip">Live Transfer Center</span>
+                        <span class="chip">Send PC → Phone</span>
+                        <span class="chip">Screen Mirroring</span>
+                        <span class="chip">Dark/Light themes</span>
+                        <span class="chip">English + Arabic</span>
+                    </div>
+                    <div class="cta-row">
+                        <a class="btn primary" href="downloads/AirBamin-1.2.0.exe">Download v1.2.0 (Windows)</a>
+                        <a class="btn secondary" href="https://tecbamin.com/downloads/airbamin-1.0.0-setup.exe">Need v1.0?</a>
+                    </div>
+                    <p style="font-size:13px;">Compatible with Windows 10/11. Uses your local network only—no cloud copies.</p>
+                </div>
+                <div class="card" id="mobile">
+                    <h3>AirBamin Mobile</h3>
+                    <p>Companion app for iOS and Android with QR pairing, host/join sharing, and early mirror support.</p>
+                    <div class="chip-row">
+                        <span class="chip">QR connect to PC</span>
+                        <span class="chip">Phone ↔ Phone sharing</span>
+                        <span class="chip">Multi-file picker</span>
+                        <span class="chip">Mirror mode (beta)</span>
+                        <span class="chip">Arabic/English UI</span>
+                    </div>
+                    <div class="cta-row">
+                        <a class="btn secondary" href="https://tecbamin.com/contact">Get Android/iOS build</a>
+                        <a class="btn secondary" href="https://tecbamin.com/contact">Join TestFlight / Play beta</a>
+                    </div>
+                    <p style="font-size:13px;">Keep phone and PC on the same Wi‑Fi/hotspot for fastest transfers and mirroring.</p>
+                </div>
+            </div>
+        </section>
 
-            <h3 style="margin-top:25px; font-size:22px; font-weight:650;">Save location</h3>
-            <div class="path">C:\Users\sho3i\Documents\AirBamin_Uploads</div>
-        </div>
+        <section id="features" class="section">
+            <div class="section-header">
+                <h2>What’s inside</h2>
+            </div>
+            <div class="feature-grid">
+                <div class="feature">
+                    <strong>QR pairing in one tap</strong>
+                    <span>Share the local link or QR from the desktop Transfer Center; phones connect instantly.</span>
+                </div>
+                <div class="feature">
+                    <strong>Two-way file flow</strong>
+                    <span>Phone → PC uploads with mirrored progress, plus PC → Phone sending for quick hand-offs.</span>
+                </div>
+                <div class="feature">
+                    <strong>Screen mirroring</strong>
+                    <span>Open Mirror on desktop and mirror your mobile screen wirelessly (beta on mobile).</span>
+                </div>
+                <div class="feature">
+                    <strong>Local-first privacy</strong>
+                    <span>Transfers stay on your Wi‑Fi/hotspot; no cloud storage or account required for pairing.</span>
+                </div>
+                <div class="feature">
+                    <strong>Modern UI & themes</strong>
+                    <span>Glassmorphic cards, redesigned navigation, and instant dark/light toggles across both apps.</span>
+                </div>
+                <div class="feature">
+                    <strong>Multilingual</strong>
+                    <span>Fully translated labels and RTL-aware layouts in English and Arabic.</span>
+                </div>
+            </div>
+        </section>
 
+        <section id="how" class="section">
+            <div class="section-header">
+                <h2>How it works</h2>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Connect to the same network</strong>
+                        <div class="meta">Wi‑Fi or phone hotspot—no internet required.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Open AirBamin on PC</strong>
+                        <div class="meta">Go to Transfer Center, refresh the link if you changed networks.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Pair the phone</strong>
+                        <div class="meta">Scan the QR or paste the link; choose Upload, Send, or Mirror.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Send, receive, or mirror</strong>
+                        <div class="meta">Watch live progress on desktop and keep the phone page open until done.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="support" class="section">
+            <div class="section-header">
+                <h2>Support & questions</h2>
+            </div>
+            <div class="faq">
+                <div class="faq-item">
+                    <strong>Is the Windows build signed?</strong>
+                    <span>1.2.0 is ready for distribution; if SmartScreen appears, choose “More info” → “Run anyway” while code signing is in progress.</span>
+                </div>
+                <div class="faq-item">
+                    <strong>Which version should I host on tecbamin.com?</strong>
+                    <span>Place the latest Windows installer at <code>/downloads/AirBamin-1.2.0.exe</code> to match this page. Keep <code>/downloads/airbamin-1.0.0-setup.exe</code> for legacy users if needed.</span>
+                </div>
+                <div class="faq-item">
+                    <strong>Where do I get the mobile build?</strong>
+                    <span>Contact us for the Android APK or iOS TestFlight invite. The site buttons link to the contact form so we can share the latest build immediately.</span>
+                </div>
+                <div class="faq-item">
+                    <strong>Need a hand?</strong>
+                    <span><a href="https://tecbamin.com/contact" style="color:#fff;">tecbamin.com/contact</a> for support, onboarding, or to report an issue.</span>
+                </div>
+            </div>
+        </section>
+        
+
+        <footer>
+            AirBamin · Local-first transfer for PC + Phone · v1.2.0 desktop · v1.0.0 mobile
+        </footer>
     </div>
-</div>
-
 </body>
 </html>

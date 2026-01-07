@@ -1,54 +1,78 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Platform, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
-import { Feather } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+// Use custom Feather that works on Android
+import Feather from '../components/CustomFeather';
+import * as Font from 'expo-font';
 import i18n from '../services/i18n';
-import { ThemeColors } from '../constants/Colors';
+import { ThemeColors, Fonts } from '../constants/Colors';
 import GlassView from '../components/GlassView';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 
-interface ModeSelectionScreenProps {
-    onSelectPC: () => void;
-    onSelectPhone: (mode: 'host' | 'join') => void;
-    onSelectMirror: () => void;
-    onSettings: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, 'Mode'>;
 
-export default function ModeSelectionScreen({ onSelectPC, onSelectPhone, onSelectMirror, onSettings }: ModeSelectionScreenProps) {
+export default function ModeSelectionScreen({ navigation }: Props) {
     const { colors, isDark, language } = useTheme();
+    const { user } = useAuth();
     const styles = getStyles(colors, isDark, language);
+
+    // Debug: Check if icon fonts are loaded
+    useEffect(() => {
+        const checkFonts = async () => {
+            const featherLoaded = await Font.isLoaded('Feather');
+            const ioniconsLoaded = await Font.isLoaded('Ionicons');
+            console.log('=== ICON FONT DEBUG ===');
+            console.log('Platform:', Platform.OS);
+            console.log('Feather font loaded:', featherLoaded);
+            console.log('Ionicons font loaded:', ioniconsLoaded);
+
+            // Also try checking with different font names
+            const featherAlt = await Font.isLoaded('feather');
+            const ioniconsAlt = await Font.isLoaded('ionicons');
+            console.log('feather (lowercase) loaded:', featherAlt);
+            console.log('ionicons (lowercase) loaded:', ioniconsAlt);
+            console.log('======================');
+        };
+        checkFonts();
+    }, []);
 
     const handlePhoneMode = () => {
         Alert.alert(
             i18n.t('connect_to_phone'),
             i18n.t('choose_phone_mode'),
             [
-                { text: i18n.t('share_files'), onPress: () => onSelectPhone('host') },
-                { text: i18n.t('receive_files'), onPress: () => onSelectPhone('join') },
+                { text: i18n.t('share_files'), onPress: () => navigation.navigate('Host') },
+                { text: i18n.t('receive_files'), onPress: () => navigation.navigate('Join') },
                 { text: i18n.t('cancel'), style: 'cancel' },
             ]
         );
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <View>
                     <Text style={styles.appName}>{i18n.t('app_name')}</Text>
-                    <Text style={styles.appSubtitle}>{i18n.t('subtitle')}</Text>
+                    <Text style={styles.appSubtitle}>
+                        {i18n.t('welcome_user', { name: user?.name || user?.username || 'User' })}
+                    </Text>
                 </View>
-                <TouchableOpacity onPress={onSettings} style={styles.settingsButton}>
+                <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.settingsButton}>
                     <Feather name="settings" size={24} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.content}>
+            <ScrollView contentContainerStyle={styles.scrollContent} style={styles.content}>
                 <Text style={styles.title}>{i18n.t('connect_mode_title')}</Text>
                 <Text style={styles.subtitle}>{i18n.t('connect_mode_subtitle')}</Text>
 
                 <View style={styles.optionsContainer}>
                     <TouchableOpacity
                         activeOpacity={0.7}
-                        onPress={onSelectPC}
+                        onPress={() => navigation.navigate('Connect')}
                     >
                         <GlassView style={styles.optionCard} contentStyle={{ alignItems: 'center' }}>
                             <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
@@ -59,6 +83,7 @@ export default function ModeSelectionScreen({ onSelectPC, onSelectPhone, onSelec
                         </GlassView>
                     </TouchableOpacity>
 
+                    {/* Phone-to-phone feature - hidden for initial release, will be enabled in future version
                     <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={handlePhoneMode}
@@ -71,22 +96,25 @@ export default function ModeSelectionScreen({ onSelectPC, onSelectPhone, onSelec
                             <Text style={styles.optionDescription}>{i18n.t('connect_to_phone_desc')}</Text>
                         </GlassView>
                     </TouchableOpacity>
+                    */}
 
+                    {/* Download PC App Link */}
                     <TouchableOpacity
                         activeOpacity={0.7}
-                        onPress={onSelectMirror}
+                        onPress={() => Linking.openURL(language === 'ar' ? 'https://tecbamin.com/airbamin' : 'https://tecbamin.com/airbamin/en')}
                     >
                         <GlassView style={styles.optionCard} contentStyle={{ alignItems: 'center' }}>
-                            <View style={[styles.iconContainer, { backgroundColor: '#FF980020' }]}>
-                                <Feather name="cast" size={48} color="#FF9800" />
+                            <View style={[styles.iconContainer, { backgroundColor: colors.success + '20' }]}>
+                                <Feather name="download" size={48} color={colors.success || '#10B981'} />
                             </View>
-                            <Text style={styles.optionTitle}>{i18n.t('screen_mirroring')}</Text>
-                            <Text style={styles.optionDescription}>{i18n.t('mirror_desc')}</Text>
+                            <Text style={styles.optionTitle}>{i18n.t('download_pc_app')}</Text>
+                            <Text style={styles.optionDescription}>{i18n.t('download_pc_app_desc')}</Text>
                         </GlassView>
                     </TouchableOpacity>
+
                 </View>
-            </View>
-        </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -100,17 +128,19 @@ const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => St
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 24,
-        paddingTop: 60,
+        paddingTop: 20,
         paddingBottom: 20,
     },
     appName: {
         fontSize: 24,
-        fontWeight: '800',
+        // fontWeight: '800', // Removed to use custom font
+        fontFamily: Fonts.bold,
         color: colors.text,
         textAlign: language === 'ar' ? 'right' : 'left',
     },
     appSubtitle: {
         fontSize: 14,
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
         textAlign: language === 'ar' ? 'right' : 'left',
     },
@@ -123,19 +153,24 @@ const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => St
     },
     content: {
         flex: 1,
+    },
+    scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 20,
+        paddingBottom: 40,
         alignItems: 'center',
     },
     title: {
         fontSize: 28,
-        fontWeight: '700',
+        // fontWeight: '700',
+        fontFamily: Fonts.bold,
         color: colors.text,
         marginBottom: 8,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
         marginBottom: 40,
         textAlign: 'center',
@@ -162,15 +197,19 @@ const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => St
     },
     optionTitle: {
         fontSize: 20,
-        fontWeight: '700',
+        // fontWeight: '700',
+        fontFamily: Fonts.bold,
         color: colors.text,
         marginBottom: 8,
         textAlign: 'center',
     },
     optionDescription: {
         fontSize: 14,
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
         textAlign: 'center',
         lineHeight: 20,
     },
 });
+
+

@@ -1,28 +1,71 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import Feather from '../components/CustomFeather';
 import i18n from '../services/i18n';
-import { ThemeColors } from '../constants/Colors';
+import { ThemeColors, Fonts } from '../constants/Colors';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
+import AppVersion from '../components/AppVersion';
 
-interface SettingsScreenProps {
-    onBack: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
-export default function SettingsScreen({ onBack }: SettingsScreenProps) {
-    const { colors, theme, language, setTheme, setLanguage, isDark } = useTheme();
+export default function SettingsScreen({ navigation }: Props) {
+    const { colors, isDark, toggleTheme, language, setLanguage } = useTheme();
+    const { logout, user } = useAuth();
     const styles = getStyles(colors, isDark, language);
 
+    const handleSignOut = async () => {
+        try {
+            await logout();
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+            });
+        } catch (error) {
+            console.error(error);
+            Alert.alert(i18n.t('error'), i18n.t('logout_failed'));
+        }
+    };
+
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={onBack} style={styles.backButton}>
-                    <Text style={styles.backButtonText}>←</Text>
-                </TouchableOpacity>
+                <View style={{ width: 40 }} />
                 <Text style={styles.title}>{i18n.t('settings')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView style={styles.content}>
+            <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+                {/* Welcome Section */}
+                <View style={styles.section}>
+                    <Text style={styles.welcomeText}>
+                        {i18n.t('welcome_user', { name: user?.name || user?.username || 'User' })}
+                    </Text>
+                </View>
+
+                {/* Appearance Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{i18n.t('appearance')}</Text>
+                    <View style={styles.optionsContainer}>
+                        <TouchableOpacity
+                            style={[styles.optionButton, !isDark && styles.optionSelected]}
+                            onPress={() => isDark && toggleTheme()}
+                        >
+                            <Text style={[styles.optionText, !isDark && styles.optionTextSelected]}>{i18n.t('light')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.optionButton, isDark && styles.optionSelected]}
+                            onPress={() => !isDark && toggleTheme()}
+                        >
+                            <Text style={[styles.optionText, isDark && styles.optionTextSelected]}>{i18n.t('dark')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Language Section */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{i18n.t('language')}</Text>
                     <View style={styles.optionsContainer}>
@@ -30,54 +73,34 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
                             style={[styles.optionButton, language === 'en' && styles.optionSelected]}
                             onPress={() => setLanguage('en')}
                         >
-                            <Text style={[styles.optionText, language === 'en' && styles.optionTextSelected]}>
-                                {i18n.t('english')}
-                            </Text>
+                            <Text style={[styles.optionText, language === 'en' && styles.optionTextSelected]}>English</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.optionButton, language === 'ar' && styles.optionSelected]}
                             onPress={() => setLanguage('ar')}
                         >
-                            <Text style={[styles.optionText, language === 'ar' && styles.optionTextSelected]}>
-                                {i18n.t('arabic')}
-                            </Text>
+                            <Text style={[styles.optionText, language === 'ar' && styles.optionTextSelected]}>العربية</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n.t('theme')}</Text>
-                    <View style={styles.optionsContainer}>
-                        <TouchableOpacity
-                            style={[styles.optionButton, theme === 'system' && styles.optionSelected]}
-                            onPress={() => setTheme('system')}
-                        >
-                            <Text style={[styles.optionText, theme === 'system' && styles.optionTextSelected]}>
-                                {i18n.t('auto')}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.optionButton, theme === 'light' && styles.optionSelected]}
-                            onPress={() => setTheme('light')}
-                        >
-                            <Text style={[styles.optionText, theme === 'light' && styles.optionTextSelected]}>
-                                {i18n.t('light')}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.optionButton, theme === 'dark' && styles.optionSelected]}
-                            onPress={() => setTheme('dark')}
-                        >
-                            <Text style={[styles.optionText, theme === 'dark' && styles.optionTextSelected]}>
-                                {i18n.t('dark')}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                {/* Account Section */}
+                <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+                    <Text style={styles.signOutText}>{i18n.t('sign_out')}</Text>
+                </TouchableOpacity>
 
-                <Text style={styles.version}>{i18n.t('version')}</Text>
+                {/* Privacy Policy Link */}
+                <TouchableOpacity
+                    style={styles.privacyButton}
+                    onPress={() => navigation.navigate('Privacy', { origin: 'Settings' })}
+                >
+                    <Text style={styles.privacyText}>{i18n.t('privacy_policy')}</Text>
+                </TouchableOpacity>
+
+                {/* Version Info */}
+                <AppVersion style={styles.version} />
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -85,49 +108,54 @@ const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => St
     container: {
         flex: 1,
         backgroundColor: colors.background,
-        paddingTop: 60,
     },
     header: {
-        flexDirection: 'row',
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        marginBottom: 30,
-        direction: language === 'ar' ? 'rtl' : 'ltr',
+        paddingTop: 20,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
     },
     backButton: {
         padding: 8,
     },
-    backButtonText: {
-        fontSize: 24,
-        color: colors.primary,
-        fontWeight: 'bold',
-        // Flip arrow for RTL
-        transform: [{ scaleX: language === 'ar' ? -1 : 1 }],
-    },
     title: {
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: Fonts.bold,
         color: colors.text,
     },
     content: {
-        paddingHorizontal: 20,
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 24,
+        paddingBottom: 40,
     },
     section: {
-        marginBottom: 30,
+        marginBottom: 32,
     },
     sectionTitle: {
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
         marginBottom: 16,
+        textAlign: language === 'ar' ? 'right' : 'left',
+    },
+    welcomeText: {
+        fontSize: 24,
+        fontFamily: Fonts.bold,
+        color: colors.primary,
+        marginBottom: 8,
         textAlign: language === 'ar' ? 'right' : 'left',
     },
     optionsContainer: {
         backgroundColor: colors.card,
         borderRadius: 16,
         padding: 4,
-        flexDirection: 'row',
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         borderWidth: 1,
         borderColor: colors.border,
     },
@@ -147,18 +175,43 @@ const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => St
     },
     optionText: {
         color: colors.textSecondary,
-        fontWeight: '500',
+        fontFamily: Fonts.regular,
         fontSize: 14,
     },
     optionTextSelected: {
         color: colors.text,
-        fontWeight: '700',
+        fontFamily: Fonts.bold,
+    },
+    signOutButton: {
+        backgroundColor: colors.error,
+        borderRadius: 16,
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    signOutText: {
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: Fonts.bold,
+    },
+    privacyButton: {
+        marginTop: 24,
+        alignItems: 'center',
+    },
+    privacyText: {
+        color: colors.textSecondary,
+        fontSize: 14,
+        fontFamily: Fonts.regular,
+        textDecorationLine: 'underline',
     },
     version: {
         textAlign: 'center',
         color: colors.textSecondary,
         fontSize: 13,
+        fontFamily: Fonts.regular,
         marginTop: 40,
         opacity: 0.5,
     },
 });
+
+

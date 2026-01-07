@@ -33,4 +33,9 @@ export const Colors = {
     },
 };
 
+export const Fonts = {
+    regular: 'Baloo-Regular',
+    bold: 'Baloo-Bold',
+};
+
 export type ThemeColors = typeof Colors.light;

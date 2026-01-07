@@ -1,0 +1,164 @@
+diff --git a/node_modules/react-native-http-bridge/android/build.gradle b/node_modules/react-native-http-bridge/android/build.gradle
+index 9417a5f..dc241d4 100644
+--- a/node_modules/react-native-http-bridge/android/build.gradle
++++ b/node_modules/react-native-http-bridge/android/build.gradle
+@@ -1,40 +1,34 @@
+-buildscript {
+-    repositories {
+-        jcenter()
+-    }
+-    dependencies {
+-        classpath 'com.android.tools.build:gradle:2.2.0'
+-    }
+-}
+-
+-allprojects {
+-    repositories {
+-        jcenter()
+-    }
+-}
+-
+ apply plugin: 'com.android.library'
+ 
+ android {
+-    compileSdkVersion 26
+-    buildToolsVersion "26.0.2"
++    // Align with the app's compile/target SDKs
++    compileSdkVersion rootProject.ext.has("compileSdkVersion") ? rootProject.ext.compileSdkVersion : 34
+ 
+     defaultConfig {
+-        minSdkVersion 16
+-        targetSdkVersion 22
++        minSdkVersion 24
++        targetSdkVersion 34
+         versionCode 2
+         versionName "1.1"
+         ndk {
+             abiFilters "armeabi-v7a", "x86"
+         }
+     }
+-    lintOptions {
+-       warning 'InvalidPackage'
++
++    // Required for AGP 8+; keep in sync with Java package
++    namespace "me.alwx.HttpServer"
++
++    compileOptions {
++        sourceCompatibility JavaVersion.VERSION_17
++        targetCompatibility JavaVersion.VERSION_17
+     }
+ }
+ 
+ dependencies {
+-    compile 'com.facebook.react:react-native:+'
+-    compile 'com.google.android.gms:play-services-gcm:+'
+-    compile 'org.nanohttpd:nanohttpd:2.3.1'
++    implementation 'com.facebook.react:react-native:+'
++    implementation 'org.nanohttpd:nanohttpd:2.3.1'
++}
++
++repositories {
++    mavenCentral()
++    google()
+ }
+diff --git a/node_modules/react-native-http-bridge/android/src/main/AndroidManifest.xml b/node_modules/react-native-http-bridge/android/src/main/AndroidManifest.xml
+index d06447a..fbb2ef8 100644
+--- a/node_modules/react-native-http-bridge/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-http-bridge/android/src/main/AndroidManifest.xml
+@@ -1,6 +1,3 @@
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-          package="me.alwx.HttpServer">
+-
+-          <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+-
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
++    <uses-permission android:name="android.permission.INTERNET" />
+ </manifest>
+diff --git a/node_modules/react-native-http-bridge/android/src/main/java/me/alwx/HttpServer/Server.java b/node_modules/react-native-http-bridge/android/src/main/java/me/alwx/HttpServer/Server.java
+index decf9f2..4f0bc34 100644
+--- a/node_modules/react-native-http-bridge/android/src/main/java/me/alwx/HttpServer/Server.java
++++ b/node_modules/react-native-http-bridge/android/src/main/java/me/alwx/HttpServer/Server.java
+@@ -14,22 +14,24 @@ import java.util.Set;
+ import java.util.HashMap;
+ import java.util.Random;
+ 
+-import android.support.annotation.Nullable;
++import androidx.annotation.Nullable;
+ import android.util.Log;
+ 
+ public class Server extends NanoHTTPD {
+     private static final String TAG = "HttpServer";
+     private static final String SERVER_EVENT_ID = "httpServerResponseReceived";
++    // Bind to all network interfaces for external access (iPhone -> Android)
++    private static final String BIND_ADDRESS = "0.0.0.0";
+ 
+     private ReactContext reactContext;
+     private Map<String, Response> responses;
+ 
+     public Server(ReactContext context, int port) {
+-        super(port);
++        super(BIND_ADDRESS, port);  // CRITICAL: Bind to 0.0.0.0 for external connections
+         reactContext = context;
+         responses = new HashMap<>();
+ 
+-        Log.d(TAG, "Server started");
++        Log.d(TAG, "Server started on " + BIND_ADDRESS + ":" + port);
+     }
+ 
+     @Override
+diff --git a/node_modules/react-native-http-bridge/httpServer.js b/node_modules/react-native-http-bridge/httpServer.js
+index 217f3b8..844eadc 100644
+--- a/node_modules/react-native-http-bridge/httpServer.js
++++ b/node_modules/react-native-http-bridge/httpServer.js
+@@ -7,6 +7,9 @@ import {DeviceEventEmitter} from 'react-native';
+ import {NativeModules} from 'react-native';
+ var Server = NativeModules.HttpServer;
+ 
++// Store subscription reference for proper cleanup
++var subscription = null;
++
+ module.exports = {
+     start: function (port, serviceName, callback) {
+         if (port == 80) {
+@@ -14,12 +17,17 @@ module.exports = {
+         }
+ 
+         Server.start(port, serviceName);
+-        DeviceEventEmitter.addListener('httpServerResponseReceived', callback);
++        // Use addListener which returns a subscription object
++        subscription = DeviceEventEmitter.addListener('httpServerResponseReceived', callback);
+     },
+ 
+     stop: function () {
+         Server.stop();
+-        DeviceEventEmitter.removeListener('httpServerResponseReceived');
++        // Use subscription.remove() instead of deprecated removeListener
++        if (subscription) {
++            subscription.remove();
++            subscription = null;
++        }
+     },
+ 
+     respond: function (requestId, code, type, body) {
+diff --git a/node_modules/react-native-http-bridge/react-native-http-bridge.podspec b/node_modules/react-native-http-bridge/react-native-http-bridge.podspec
+new file mode 100644
+index 0000000..846e3dd
+--- /dev/null
++++ b/node_modules/react-native-http-bridge/react-native-http-bridge.podspec
+@@ -0,0 +1,16 @@
++require 'json'
++
++package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
++
++Pod::Spec.new do |s|
++  s.name         = "react-native-http-bridge"
++  s.version      = package['version']
++  s.summary      = package['description']
++  s.license      = package['license']
++  s.authors      = package['author']
++  s.homepage     = package['homepage']
++  s.platform     = :ios, "12.0"
++  s.source       = { :git => package['repository']['url'], :tag => "v#{s.version}" }
++  s.source_files = "ios/**/*.{h,m}"
++  s.dependency   "React-Core"
++end

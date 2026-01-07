@@ -16,15 +16,22 @@ export default function GlassView({ children, style, contentStyle, intensity = 5
     const { colors, isDark } = useTheme();
 
     // Default gradient based on theme
-    const defaultGradient: [string, string] = isDark
-        ? ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)']
-        : ['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.3)'];
+    // Android needs more opaque backgrounds since BlurView support is limited
+    const defaultGradient: [string, string] = Platform.OS === 'android'
+        ? isDark
+            ? ['rgba(30, 30, 30, 0.85)', 'rgba(20, 20, 20, 0.8)']
+            : ['rgba(255, 255, 255, 0.85)', 'rgba(240, 240, 240, 0.8)']
+        : isDark
+            ? ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)']
+            : ['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.3)'];
 
     const activeGradient = gradientColors || defaultGradient;
 
     return (
         <View style={[styles.container, { borderColor: colors.glassBorder, shadowColor: colors.glassShadow }, style]}>
-            <BlurView intensity={intensity} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+            {Platform.OS === 'ios' && (
+                <BlurView intensity={intensity} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+            )}
             <LinearGradient
                 colors={activeGradient}
                 start={{ x: 0, y: 0 }}

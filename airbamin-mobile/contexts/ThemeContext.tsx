@@ -14,6 +14,7 @@ interface ThemeContextType {
     colors: ThemeColors;
     isDark: boolean;
     setTheme: (theme: ThemeType) => void;
+    toggleTheme: () => void;
     setLanguage: (lang: LanguageType) => void;
 }
 
@@ -23,6 +24,7 @@ const ThemeContext = createContext<ThemeContextType>({
     colors: Colors.dark,
     isDark: true,
     setTheme: () => { },
+    toggleTheme: () => { },
     setLanguage: () => { },
 });
 
@@ -70,6 +72,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     };
 
+    const toggleTheme = () => {
+        const newTheme = isDark ? 'light' : 'dark';
+        setTheme(newTheme);
+    };
+
     const isDark =
         theme === 'system' ? systemColorScheme === 'dark' : theme === 'dark';
 
@@ -83,6 +90,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 colors,
                 isDark,
                 setTheme,
+                toggleTheme,
                 setLanguage,
             }}
         >

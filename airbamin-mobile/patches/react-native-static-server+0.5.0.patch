@@ -1,0 +1,441 @@
+diff --git a/node_modules/react-native-static-server/android/build.gradle b/node_modules/react-native-static-server/android/build.gradle
+index 0c7bca6..06e9285 100644
+--- a/node_modules/react-native-static-server/android/build.gradle
++++ b/node_modules/react-native-static-server/android/build.gradle
+@@ -1,151 +1,38 @@
+-// android/build.gradle
+-
+-// based on:
+-//
+-// * https://github.com/facebook/react-native/blob/0.60-stable/template/android/build.gradle
+-//   original location:
+-//   - https://github.com/facebook/react-native/blob/0.58-stable/local-cli/templates/HelloWorld/android/build.gradle
+-//
+-// * https://github.com/facebook/react-native/blob/0.60-stable/template/android/app/build.gradle
+-//   original location:
+-//   - https://github.com/facebook/react-native/blob/0.58-stable/local-cli/templates/HelloWorld/android/app/build.gradle
+-
+-def DEFAULT_COMPILE_SDK_VERSION = 28
+-def DEFAULT_BUILD_TOOLS_VERSION = '28.0.3'
+-def DEFAULT_MIN_SDK_VERSION = 16
+-def DEFAULT_TARGET_SDK_VERSION = 28
+-
+-def safeExtGet(prop, fallback) {
+-    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+-}
+-
+-apply plugin: 'com.android.library'
+-apply plugin: 'maven'
+-
+-buildscript {
+-    // The Android Gradle plugin is only required when opening the android folder stand-alone.
+-    // This avoids unnecessary downloads and potential conflicts when the library is included as a
+-    // module dependency in an application project.
+-    // ref: https://docs.gradle.org/current/userguide/tutorial_using_tasks.html#sec:build_script_external_dependencies
+-    if (project == rootProject) {
+-        repositories {
+-            google()
+-            jcenter()
+-        }
+-        dependencies {
+-            classpath 'com.android.tools.build:gradle:3.4.1'
+-        }
+-    }
+-}
+-
++// Simplified for modern AGP: remove legacy maven plugin & old defaults
+ apply plugin: 'com.android.library'
+-apply plugin: 'maven'
+ 
+ android {
+-    compileSdkVersion safeExtGet('compileSdkVersion', DEFAULT_COMPILE_SDK_VERSION)
+-    buildToolsVersion safeExtGet('buildToolsVersion', DEFAULT_BUILD_TOOLS_VERSION)
++    compileSdkVersion rootProject.ext.has("compileSdkVersion") ? rootProject.ext.compileSdkVersion : 34
++
+     defaultConfig {
+-        minSdkVersion safeExtGet('minSdkVersion', DEFAULT_MIN_SDK_VERSION)
+-        targetSdkVersion safeExtGet('targetSdkVersion', DEFAULT_TARGET_SDK_VERSION)
++        minSdkVersion rootProject.ext.has("minSdkVersion") ? rootProject.ext.minSdkVersion : 24
++        targetSdkVersion rootProject.ext.has("targetSdkVersion") ? rootProject.ext.targetSdkVersion : 34
+         versionCode 1
+         versionName "1.0"
+     }
++
++    namespace "com.futurepress.staticserver"
++
++    compileOptions {
++        sourceCompatibility JavaVersion.VERSION_17
++        targetCompatibility JavaVersion.VERSION_17
++    }
++
+     lintOptions {
+         abortOnError false
+     }
+ }
+ 
+ repositories {
+-    // ref: https://www.baeldung.com/maven-local-repository
+-    mavenLocal()
+-    maven {
+-        // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+-        url "$rootDir/../node_modules/react-native/android"
+-    }
+-    maven {
+-        // Android JSC is installed from npm
+-        url "$rootDir/../node_modules/jsc-android/dist"
+-    }
++    mavenCentral()
+     google()
+-    jcenter()
++    mavenLocal()
++    maven { url "$rootDir/../node_modules/react-native/android" }
++    maven { url "$rootDir/../node_modules/jsc-android/dist" }
+ }
+ 
+ dependencies {
+-    //noinspection GradleDynamicVersion
+-    implementation 'com.facebook.react:react-native:+'  // From node_modules
++    implementation 'com.facebook.react:react-native:+'
+     implementation 'org.nanohttpd:nanohttpd:2.3.1'
+     implementation 'org.nanohttpd:nanohttpd-webserver:2.3.1'
+ }
+-
+-def configureReactNativePom(def pom) {
+-    def packageJson = new groovy.json.JsonSlurper().parseText(file('../package.json').text)
+-
+-    pom.project {
+-        name packageJson.title
+-        artifactId packageJson.name
+-        version = packageJson.version
+-        group = "com.futurepress.staticserver"
+-        description packageJson.description
+-        url packageJson.repository.baseUrl
+-
+-        licenses {
+-            license {
+-                name packageJson.license
+-                url packageJson.repository.baseUrl + '/blob/master/' + packageJson.licenseFilename
+-                distribution 'repo'
+-            }
+-        }
+-
+-        developers {
+-            developer {
+-                id packageJson.author.username
+-                name packageJson.author.name
+-            }
+-        }
+-    }
+-}
+-
+-afterEvaluate { project ->
+-    // some Gradle build hooks ref:
+-    // https://www.oreilly.com/library/view/gradle-beyond-the/9781449373801/ch03.html
+-    task androidJavadoc(type: Javadoc) {
+-        source = android.sourceSets.main.java.srcDirs
+-        classpath += files(android.bootClasspath)
+-        classpath += files(project.getConfigurations().getByName('compile').asList())
+-        include '**/*.java'
+-    }
+-
+-    task androidJavadocJar(type: Jar, dependsOn: androidJavadoc) {
+-        classifier = 'javadoc'
+-        from androidJavadoc.destinationDir
+-    }
+-
+-    task androidSourcesJar(type: Jar) {
+-        classifier = 'sources'
+-        from android.sourceSets.main.java.srcDirs
+-        include '**/*.java'
+-    }
+-
+-    android.libraryVariants.all { variant ->
+-        def name = variant.name.capitalize()
+-        def javaCompileTask = variant.javaCompileProvider.get()
+-
+-        task "jar${name}"(type: Jar, dependsOn: javaCompileTask) {
+-            from javaCompileTask.destinationDir
+-        }
+-    }
+-
+-    artifacts {
+-        archives androidSourcesJar
+-        archives androidJavadocJar
+-    }
+-
+-    task installArchives(type: Upload) {
+-        configuration = configurations.archives
+-        repositories.mavenDeployer {
+-            // Deploy to react-native-event-bridge/maven, ready to publish to npm
+-            repository url: "file://${projectDir}/../android/maven"
+-            configureReactNativePom pom
+-        }
+-    }
+-}
+diff --git a/node_modules/react-native-static-server/android/build/.transforms/bbb13d33d11c365a9526ec4d86cca18c/results.bin b/node_modules/react-native-static-server/android/build/.transforms/bbb13d33d11c365a9526ec4d86cca18c/results.bin
+new file mode 100644
+index 0000000..0d259dd
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/.transforms/bbb13d33d11c365a9526ec4d86cca18c/results.bin
+@@ -0,0 +1 @@
++o/classes
+diff --git a/node_modules/react-native-static-server/android/build/.transforms/bbb13d33d11c365a9526ec4d86cca18c/transformed/classes/classes_dex/classes.dex b/node_modules/react-native-static-server/android/build/.transforms/bbb13d33d11c365a9526ec4d86cca18c/transformed/classes/classes_dex/classes.dex
+new file mode 100644
+index 0000000..0ee4f04
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/.transforms/bbb13d33d11c365a9526ec4d86cca18c/transformed/classes/classes_dex/classes.dex differ
+diff --git a/node_modules/react-native-static-server/android/build/generated/source/buildConfig/debug/com/futurepress/staticserver/BuildConfig.java b/node_modules/react-native-static-server/android/build/generated/source/buildConfig/debug/com/futurepress/staticserver/BuildConfig.java
+new file mode 100644
+index 0000000..4724e5d
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/generated/source/buildConfig/debug/com/futurepress/staticserver/BuildConfig.java
+@@ -0,0 +1,10 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package com.futurepress.staticserver;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = Boolean.parseBoolean("true");
++  public static final String LIBRARY_PACKAGE_NAME = "com.futurepress.staticserver";
++  public static final String BUILD_TYPE = "debug";
++}
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/react-native-static-server/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..6bc6db6
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.futurepress.staticserver" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/react-native-static-server/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..6e21670
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "com.futurepress.staticserver",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/react-native-static-server/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/react-native-static-server/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/react-native-static-server/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+new file mode 100644
+index 0000000..cfd3e07
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/react-native-static-server/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..dc81aa6
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/react-native-static-server/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/react-native-static-server/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..7014d7c
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Fri Dec 05 15:39:55 EET 2025
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/react-native-static-server/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..3de7cfa
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\build\generated\res\resValues\debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\build\generated\res\resValues\debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/react-native-static-server/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+new file mode 100644
+index 0000000..e8b9ca3
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\debug\jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/react-native-static-server/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+new file mode 100644
+index 0000000..e7ed55c
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\debug\shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/incremental/packageDebugAssets/merger.xml b/node_modules/react-native-static-server/android/build/intermediates/incremental/packageDebugAssets/merger.xml
+new file mode 100644
+index 0000000..331442f
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/incremental/packageDebugAssets/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\debug\assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\build\intermediates\shader_assets\debug\compileDebugShaders\out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/BuildConfig.class b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/BuildConfig.class
+new file mode 100644
+index 0000000..05eb1b7
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/BuildConfig.class differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/FPStaticServerModule.class b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/FPStaticServerModule.class
+new file mode 100644
+index 0000000..d22cbed
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/FPStaticServerModule.class differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/FPStaticServerPackage.class b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/FPStaticServerPackage.class
+new file mode 100644
+index 0000000..e87a15f
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/FPStaticServerPackage.class differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/InetAddressUtils.class b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/InetAddressUtils.class
+new file mode 100644
+index 0000000..6a606cd
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/InetAddressUtils.class differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/WebServer.class b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/WebServer.class
+new file mode 100644
+index 0000000..d1f4d35
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/futurepress/staticserver/WebServer.class differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/react-native-static-server/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/react-native-static-server/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..4658366
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,7 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="com.futurepress.staticserver" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7</manifest>
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/react-native-static-server/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..6bc6db6
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.futurepress.staticserver" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/react-native-static-server/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/react-native-static-server/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/react-native-static-server/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+new file mode 100644
+index 0000000..d0502a4
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+diff --git a/node_modules/react-native-static-server/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/react-native-static-server/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..42b25f7
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++com.futurepress.staticserver
+diff --git a/node_modules/react-native-static-server/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/react-native-static-server/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..e73364e
+--- /dev/null
++++ b/node_modules/react-native-static-server/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,17 @@
++-- Merging decision tree log ---
++manifest
++ADDED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml:2:1-5:12
++INJECTED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml:2:1-5:12
++	package
++		ADDED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml:3:11-49
++		INJECTED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml
++	xmlns:android
++		ADDED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml:2:11-69
++uses-sdk
++INJECTED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml
++INJECTED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from D:\LIFE\PROGRAMING\airbamin-desktop\airbamin-mobile\node_modules\react-native-static-server\android\src\main\AndroidManifest.xml
+diff --git a/node_modules/react-native-static-server/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/react-native-static-server/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
+new file mode 100644
+index 0000000..c0bfe10
+Binary files /dev/null and b/node_modules/react-native-static-server/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
+diff --git a/node_modules/react-native-static-server/android/src/main/java/com/futurepress/staticserver/FPStaticServerModule.java b/node_modules/react-native-static-server/android/src/main/java/com/futurepress/staticserver/FPStaticServerModule.java
+index 9a5ffc7..22788e7 100644
+--- a/node_modules/react-native-static-server/android/src/main/java/com/futurepress/staticserver/FPStaticServerModule.java
++++ b/node_modules/react-native-static-server/android/src/main/java/com/futurepress/staticserver/FPStaticServerModule.java
+@@ -116,7 +116,7 @@ public class FPStaticServerModule extends ReactContextBaseJavaModule implements
+       if(localhost_only) {
+         server = new WebServer("localhost", port, www_root);
+       } else {
+-        server = new WebServer(__getLocalIpAddress(), port, www_root);
++        server = new WebServer(null, port, www_root);  // null = bind to all interfaces (0.0.0.0)
+       }
+ 
+ 
+@@ -198,3 +198,4 @@ public class FPStaticServerModule extends ReactContextBaseJavaModule implements
+     stop();
+   }
+ }
++

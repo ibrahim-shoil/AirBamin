@@ -1,107 +1,145 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from '../components/CustomFeather';
 import { useTheme } from '../contexts/ThemeContext';
-import { Feather } from '@expo/vector-icons';
 import i18n from '../services/i18n';
-import { ThemeColors } from '../constants/Colors';
+import { ThemeColors, Fonts } from '../constants/Colors';
+import QRScanner from '../components/QRScanner';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 import phoneServerService from '../services/phoneServerService';
 
-interface JoinModeScreenProps {
-    onBack: () => void;
-    onJoinSuccess: (sessionCode: string, hostIP: string) => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, 'Join'>;
 
-export default function JoinModeScreen({ onBack, onJoinSuccess }: JoinModeScreenProps) {
+export default function JoinModeScreen({ navigation }: Props) {
     const { colors, isDark, language } = useTheme();
-    const styles = getStyles(colors, isDark, language);
-
-    const [sessionCode, setSessionCode] = useState('');
-    const [isConnecting, setIsConnecting] = useState(false);
+    const [code, setCode] = useState('');
+    const [showScanner, setShowScanner] = useState(false);
+    const [joining, setJoining] = useState(false);
+    const [scanProgress, setScanProgress] = useState(0);
 
     const handleJoin = async () => {
-        if (sessionCode.length !== 6) {
-            Alert.alert(i18n.t('error'), i18n.t('invalid_session_code'));
+        console.log('🔵 handleJoin called with code:', code);
+
+        const trimmedCode = code.trim();
+
+        // If code contains colons, it's a full connection string (IP:PORT:CODE)
+        if (trimmedCode.includes(':')) {
+            console.log('🔵 Full connection string detected, using direct connection');
+            connectWithString(trimmedCode);
             return;
         }
 
-        setIsConnecting(true);
+        // Just a code without IP - show helpful message to use QR scanner
+        Alert.alert(
+            i18n.t('scan_qr_instruction'),
+            'Please scan the QR code from the host device, or enter the full connection info (IP:PORT:CODE).\n\nExample: 192.168.1.10:8095:123456',
+            [
+                { text: i18n.t('scan_qr_code'), onPress: () => setShowScanner(true) },
+                { text: i18n.t('cancel'), style: 'cancel' }
+            ]
+        );
+    };
 
-        const result = await phoneServerService.connectToHost(sessionCode);
+    const connectWithString = async (connectionString: string) => {
+        setJoining(true);
+        const result = await phoneServerService.connectToHost(connectionString);
+        setJoining(false);
 
-        setIsConnecting(false);
+        console.log('🔵 connectWithString result:', result);
 
-        if (result.success && result.hostIP) {
-            Alert.alert(i18n.t('success'), i18n.t('connected_to_host'));
-            onJoinSuccess(sessionCode, result.hostIP);
+        if (result.success && result.hostIP && result.files) {
+            console.log('🔵 Navigating to Receive with files:', result.files);
+            navigation.navigate('Receive', {
+                hostIP: result.hostIP,
+                isPhoneTransfer: true,
+                phoneFiles: result.files  // Pass the files directly!
+            });
         } else {
             Alert.alert(i18n.t('error'), i18n.t('connection_failed_phone'));
         }
     };
 
+    const handleScan = (data: string) => {
+        setShowScanner(false);
+        if (data) {
+            // If scanned data is just code (unlikely from our app, but possible)
+            if (!data.includes(':') && data.length === 6) {
+                setCode(data);
+                // We could auto-join here, but let's let user confirm
+            } else {
+                // Full connection string
+                connectWithString(data);
+            }
+        }
+    };
+
+    const styles = getStyles(colors, isDark, language);
+
+    if (showScanner) {
+        return (
+            <QRScanner
+                onScanComplete={handleScan}
+                onClose={() => setShowScanner(false)}
+            />
+        );
+    }
+
     return (
-        <View style={styles.container}>
-            {/* Header */}
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={onBack} style={styles.backButton}>
-                    <Feather name={language === 'ar' ? "arrow-right" : "arrow-left"} size={24} color={colors.text} />
-                </TouchableOpacity>
-                <Text style={styles.title}>{i18n.t('receive_from_phone')}</Text>
+                <View style={{ width: 40 }} />
+                <Text style={styles.headerTitle}>{i18n.t('receive_files')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            {/* Content */}
             <View style={styles.content}>
-                <View style={styles.iconContainer}>
-                    <Feather name="smartphone" size={64} color={colors.primary} />
-                </View>
+                <View style={styles.card}>
+                    <Text style={styles.title}>{i18n.t('join_mode_title')}</Text>
+                    <Text style={styles.subtitle}>{i18n.t('join_mode_subtitle')}</Text>
 
-                <Text style={styles.instructionTitle}>{i18n.t('enter_session_code')}</Text>
-                <Text style={styles.instructionText}>{i18n.t('session_code_instruction')}</Text>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="IP:PORT:CODE"
+                            placeholderTextColor={colors.textSecondary}
+                            value={code}
+                            onChangeText={setCode}
+                            keyboardType="default"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                    </View>
 
-                {/* Session Code Input */}
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={sessionCode}
-                        onChangeText={(text) => setSessionCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
-                        placeholder="000000"
-                        placeholderTextColor={colors.textSecondary}
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        editable={!isConnecting}
-                    />
-                </View>
-
-                {/* Connect Button */}
-                <TouchableOpacity
-                    style={[styles.connectButton, (sessionCode.length !== 6 || isConnecting) && styles.disabledButton]}
-                    onPress={handleJoin}
-                    disabled={sessionCode.length !== 6 || isConnecting}
-                >
-                    {isConnecting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.connectButtonText}>{i18n.t('connect')}</Text>
+                    {joining && (
+                        <View style={{ marginBottom: 20, alignItems: 'center' }}>
+                            <ActivityIndicator color={colors.primary} size="large" />
+                            <Text style={{ marginTop: 10, color: colors.textSecondary }}>
+                                {i18n.t('searching_for_host')} {scanProgress > 0 ? `(${scanProgress}%)` : ''}
+                            </Text>
+                        </View>
                     )}
-                </TouchableOpacity>
 
-                {/* Or Divider */}
-                <View style={styles.divider}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>{i18n.t('or')}</Text>
-                    <View style={styles.dividerLine} />
+                    <TouchableOpacity
+                        style={styles.scanButton}
+                        onPress={() => setShowScanner(true)}
+                        disabled={joining}
+                    >
+                        <Icon name="camera" size={20} color={colors.primary} />
+                        <Text style={styles.scanButtonText}>{i18n.t('scan_qr_code')}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.joinButton, (code.length < 6 || joining) && styles.disabledButton]}
+                        onPress={handleJoin}
+                        disabled={code.length < 6 || joining}
+                    >
+                        <Text style={styles.joinButtonText}>{i18n.t('join_session')}</Text>
+                    </TouchableOpacity>
                 </View>
-
-                {/* Scan QR Button */}
-                <TouchableOpacity
-                    style={styles.scanButton}
-                    onPress={() => Alert.alert(i18n.t('coming_soon'), i18n.t('qr_scan_coming_soon'))}
-                >
-                    <Feather name="camera" size={20} color={colors.primary} />
-                    <Text style={styles.scanButtonText}>{i18n.t('scan_qr_code')}</Text>
-                </TouchableOpacity>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -111,115 +149,93 @@ const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => St
         backgroundColor: colors.background,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingTop: 60,
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingTop: 20,
         paddingBottom: 20,
-        backgroundColor: colors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
     },
-    backButton: {
-        padding: 10,
-    },
-    title: {
+    headerTitle: {
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: Fonts.bold,
         color: colors.text,
     },
     content: {
         flex: 1,
-        padding: 20,
-        alignItems: 'center',
+        padding: 24,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: colors.primary + '20',
+    card: {
+        backgroundColor: colors.card,
+        borderRadius: 24,
+        padding: 32,
         alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 32,
+        borderWidth: 1,
+        borderColor: colors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
     },
-    instructionTitle: {
+    title: {
         fontSize: 24,
-        fontWeight: '700',
+        fontFamily: Fonts.bold,
         color: colors.text,
-        marginBottom: 12,
+        marginBottom: 8,
         textAlign: 'center',
     },
-    instructionText: {
+    subtitle: {
         fontSize: 16,
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
-        textAlign: 'center',
         marginBottom: 32,
-        lineHeight: 22,
+        textAlign: 'center',
     },
     inputContainer: {
         width: '100%',
         marginBottom: 24,
     },
     input: {
-        backgroundColor: colors.card,
-        borderWidth: 2,
-        borderColor: colors.border,
+        backgroundColor: colors.inputBg,
         borderRadius: 16,
-        padding: 24,
-        fontSize: 32,
-        fontWeight: '700',
+        padding: 20,
+        fontSize: 24,
+        fontFamily: Fonts.bold,
         color: colors.text,
-        textAlign: 'center',
-        letterSpacing: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        letterSpacing: 4,
     },
-    connectButton: {
+    scanButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginBottom: 32,
+        padding: 12,
+    },
+    scanButtonText: {
+        fontSize: 16,
+        fontFamily: Fonts.regular,
+        color: colors.primary,
+    },
+    joinButton: {
         width: '100%',
         backgroundColor: colors.primary,
         paddingVertical: 18,
         borderRadius: 16,
         alignItems: 'center',
-        marginBottom: 32,
     },
-    connectButtonText: {
+    joinButtonText: {
         fontSize: 18,
-        fontWeight: '700',
+        fontFamily: Fonts.bold,
         color: '#fff',
     },
     disabledButton: {
         opacity: 0.5,
     },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: '100%',
-        marginBottom: 24,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: colors.border,
-    },
-    dividerText: {
-        marginHorizontal: 16,
-        fontSize: 14,
-        color: colors.textSecondary,
-    },
-    scanButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: colors.primary,
-        backgroundColor: 'transparent',
-    },
-    scanButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.primary,
-    },
 });
+
+

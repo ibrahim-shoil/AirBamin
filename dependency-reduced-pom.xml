@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.airbamin.desktop</groupId>
   <artifactId>airbamin-desktop</artifactId>
-  <version>1.2.0</version>
+  <version>1.4.0</version>
   <build>
     <resources>
       <resource>
@@ -62,14 +62,17 @@
         <version>0.0.8</version>
         <configuration>
           <mainClass>com.airbamin.desktop.Main</mainClass>
+          <options>
+            <option>-Xdock:name=Airbamin</option>
+          </options>
         </configuration>
       </plugin>
     </plugins>
   </build>
   <properties>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <javafx.version>21.0.4</javafx.version>
-    <maven.compiler.target>21</maven.compiler.target>
-    <maven.compiler.source>21</maven.compiler.source>
   </properties>
 </project>

@@ -442,6 +442,7 @@ public class YouTubeDownloadService {
                 currentProcess = null;
 
                 if (exitCode == 0) {
+                    if (options.subtitlesOnly) { postProcessSubtitles(); }
                     Path outputFile = lastFile != null ? Paths.get(lastFile) : downloadsDir;
                     callback.onComplete(outputFile);
                 } else {
@@ -463,6 +464,16 @@ public class YouTubeDownloadService {
         // Use a standard browser user agent
         cmd.add("--user-agent");
         cmd.add("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+        // Subtitle-only mode: skip video/audio download
+        if (options.subtitlesOnly) {
+            cmd.add("--skip-download");
+            cmd.add("--restrict-filenames");
+            cmd.add("-o");
+            cmd.add("subtitle:" + downloadsDir.resolve("%(title)s-%(sub_lang)s.%(ext)s").toString());
+            cmd.add("--write-subs");
+            cmd.add("--write-auto-subs");  // Download both manual and auto-generated
+        }
 
         // Output template
         cmd.add("-o");
@@ -541,6 +552,8 @@ public class YouTubeDownloadService {
                 cmd.add("--sub-langs");
                 cmd.add(String.join(",", options.subtitleLangs));
             }
+            cmd.add("--sub-format");
+            cmd.add("ttml");
             cmd.add("--convert-subs");
             cmd.add("srt");
         }
@@ -583,11 +596,57 @@ public class YouTubeDownloadService {
         }
     }
 
+
+    /**
+     * Post-process subtitles: rename to remove video ID and -NA, create TXT versions
+     */
+    private void postProcessSubtitles() {
+        try {
+            File[] srtFiles = downloadsDir.toFile().listFiles((dir, name) -> name.endsWith(".srt"));
+            if (srtFiles == null) return;
+            for (File file : srtFiles) {
+                String fileName = file.getName();
+                String newName = fileName.replaceAll(" \\[.*?\\]", "").replace("-NA.", "-").replaceAll("\\.(\\w{2})\\.(srt|txt)$", "-$1.$2");
+                if (!newName.equals(fileName)) {
+                    File renamedFile = new File(file.getParent(), newName);
+                    file.renameTo(renamedFile);
+                    file = renamedFile;
+                }
+                createTxtFromSrt(file);
+            }
+        } catch (Exception e) {
+            System.err.println("Error post-processing subtitles: " + e.getMessage());
+        }
+    }
+
+    private void createTxtFromSrt(File srtFile) {
+        try {
+            // First clean the SRT file by removing HTML tags
+            List<String> lines = java.nio.file.Files.readAllLines(srtFile.toPath());
+            List<String> cleanedLines = new ArrayList<>();
+            for (String line : lines) {
+                // Remove HTML font tags like <font color="white" size=".72c">text</font>
+                String cleaned = line.replaceAll("<[^>]+>", "");
+                cleanedLines.add(cleaned);
+            }
+            // Write back cleaned SRT
+            java.nio.file.Files.write(srtFile.toPath(), cleanedLines);
+            
+            // Create TXT copy
+            String txtFileName = srtFile.getName().replace(".srt", ".txt");
+            File txtFile = new File(srtFile.getParent(), txtFileName);
+            java.nio.file.Files.copy(srtFile.toPath(), txtFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            System.err.println("Error creating TXT from " + srtFile.getName() + ": " + e.getMessage());
+        }
+    }
+
     /**
      * Download options holder
      */
     public static class DownloadOptions {
         public boolean audioOnly = false;
+        public boolean subtitlesOnly = false;
         public String audioFormat = "mp3"; // mp3, m4a, wav, flac
         public String quality = null; // 1080p, 720p, etc.
         public String outputFormat = "mp4"; // mp4, mkv, webm

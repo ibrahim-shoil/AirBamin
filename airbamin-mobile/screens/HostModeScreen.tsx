@@ -1,119 +1,37 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import Icon from '../components/CustomFeather';
 import { useTheme } from '../contexts/ThemeContext';
-import { Feather } from '@expo/vector-icons';
 import i18n from '../services/i18n';
-import { ThemeColors } from '../constants/Colors';
-import fileService, { SelectedFile } from '../services/fileService';
+import { ThemeColors, Fonts } from '../constants/Colors';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 import phoneServerService from '../services/phoneServerService';
+import fileService, { SelectedFile } from '../services/fileService';
 import QRCode from 'react-native-qrcode-svg';
 
-interface HostModeScreenProps {
-    onBack: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, 'Host'>;
 
-export default function HostModeScreen({ onBack }: HostModeScreenProps) {
+export default function HostModeScreen({ navigation }: Props) {
     const { colors, isDark, language } = useTheme();
+    const [sessionCode, setSessionCode] = useState('');
+    const [isHosting, setIsHosting] = useState(false);
+    const [connectionData, setConnectionData] = useState<string | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [receivedFiles, setReceivedFiles] = useState<Array<{name: string; size: number; uri: string}>>([]);
     const styles = getStyles(colors, isDark, language);
 
-    const [sessionCode, setSessionCode] = useState<string>('');
-    const [isHosting, setIsHosting] = useState(false);
-    const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
-    const [connectionData, setConnectionData] = useState<string>('');
-
-    // Generate 6-digit session code
-    const generateSessionCode = () => {
-        return Math.floor(100000 + Math.random() * 900000).toString();
-    };
-
-    // Start hosting
-    const startHosting = async () => {
-        if (selectedFiles.length === 0) {
-            Alert.alert(i18n.t('error'), i18n.t('select_files_first'));
-            return;
+    // Listen for files received from connected device
+    useEffect(() => {
+        if (isHosting) {
+            phoneServerService.onFilesReceived((files) => {
+                console.log('📥 Received files from connected device:', files);
+                setReceivedFiles(files);
+            });
         }
+    }, [isHosting]);
 
-        const code = generateSessionCode();
-        const success = await phoneServerService.startHosting(code, selectedFiles);
-
-        if (success) {
-            setSessionCode(code);
-            setIsHosting(true);
-
-            // Get connection data for QR code
-            const connData = await phoneServerService.getConnectionData();
-            if (connData) {
-                setConnectionData(connData);
-            }
-
-            Alert.alert(i18n.t('hosting_started'), `${i18n.t('session_code')}: ${code}`);
-        } else {
-            Alert.alert(i18n.t('error'), i18n.t('hosting_failed'));
-        }
-    };
-
-    // Stop hosting
-    const stopHosting = () => {
-        phoneServerService.stopHosting();
-        setIsHosting(false);
-        setSessionCode('');
-        setConnectionData('');
-    };
-
-    // Add files
-    const handleAddFiles = async () => {
-        const hasPermission = await fileService.requestPermissions();
-        if (!hasPermission) {
-            Alert.alert(i18n.t('permission_denied'), i18n.t('permission_msg'));
-            return;
-        }
-
-        Alert.alert(
-            i18n.t('select_type'),
-            undefined,
-            [
-                {
-                    text: i18n.t('photos'),
-                    onPress: async () => {
-                        const files = await fileService.pickImages();
-                        setSelectedFiles(prev => [...prev, ...files]);
-                    },
-                },
-                {
-                    text: i18n.t('videos'),
-                    onPress: async () => {
-                        const files = await fileService.pickVideos();
-                        setSelectedFiles(prev => [...prev, ...files]);
-                    },
-                },
-                {
-                    text: i18n.t('documents'),
-                    onPress: async () => {
-                        const files = await fileService.pickDocuments();
-                        setSelectedFiles(prev => [...prev, ...files]);
-                    },
-                },
-                {
-                    text: i18n.t('all_files'),
-                    onPress: async () => {
-                        const files = await fileService.pickAllFiles();
-                        setSelectedFiles(prev => [...prev, ...files]);
-                    },
-                },
-                {
-                    text: i18n.t('cancel'),
-                    style: 'cancel',
-                },
-            ]
-        );
-    };
-
-    // Remove file
-    const removeFile = (index: number) => {
-        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    };
-
-    // Format file size
     const formatSize = (bytes: number) => {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -122,108 +40,157 @@ export default function HostModeScreen({ onBack }: HostModeScreenProps) {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    const renderFile = ({ item, index }: { item: SelectedFile; index: number }) => (
-        <View style={styles.fileItem}>
-            <View style={styles.fileIcon}>
-                <Feather name="file" size={24} color={colors.text} />
-            </View>
-            <View style={styles.fileInfo}>
-                <Text style={styles.fileName} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.fileSize}>{formatSize(item.size)}</Text>
-            </View>
-            {!isHosting && (
-                <TouchableOpacity onPress={() => removeFile(index)} style={styles.removeButton}>
-                    <Feather name="x" size={20} color={colors.error} />
-                </TouchableOpacity>
-            )}
-        </View>
-    );
+    // Don't auto-stop hosting on unmount - server needs to stay running
+    // for phone transfers while the receiver downloads files
+    // useEffect(() => {
+    //     return () => {
+    //         if (isHosting) {
+    //             phoneServerService.stopHosting();
+    //         }
+    //     };
+    // }, [isHosting]);
+
+    const handleSelectFiles = async () => {
+        try {
+            const files = await fileService.pickAllFiles();
+            if (files.length > 0) {
+                setSelectedFiles(prev => [...prev, ...files]);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const generateCode = async () => {
+        if (selectedFiles.length === 0) {
+            Alert.alert(i18n.t('select_files_first'));
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const result = await phoneServerService.startHosting(code, selectedFiles);
+
+            if (result.success) {
+                setSessionCode(code);
+                setIsHosting(true);
+                const data = await phoneServerService.getConnectionData();
+                setConnectionData(data);
+            } else {
+                Alert.alert(i18n.t('error'), result.error || i18n.t('hosting_failed'));
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const stopHosting = () => {
+        phoneServerService.stopHosting();
+        setIsHosting(false);
+        setSessionCode('');
+        setConnectionData(null);
+    };
 
     return (
         <View style={styles.container}>
-            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={onBack} style={styles.backButton}>
-                    <Feather name={language === 'ar' ? "arrow-right" : "arrow-left"} size={24} color={colors.text} />
-                </TouchableOpacity>
+                {/* Back button removed */}
                 <Text style={styles.title}>{i18n.t('share_files')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView style={styles.scrollView}>
-                {/* Session Code & QR Display (when hosting) */}
-                {isHosting && (
-                    <View style={styles.sessionCard}>
-                        <Text style={styles.sessionLabel}>{i18n.t('session_code')}</Text>
-                        <Text style={styles.sessionCode}>{sessionCode}</Text>
-                        <Text style={styles.sessionHint}>{i18n.t('share_code_hint')}</Text>
+            <ScrollView contentContainerStyle={styles.content}>
+                <View style={styles.card}>
+                    {!isHosting ? (
+                        <>
+                            <Icon name="share-2" size={48} color={colors.primary} style={{ marginBottom: 16 }} />
+                            <Text style={styles.cardTitle}>{i18n.t('start_sharing')}</Text>
+                            <Text style={styles.cardDesc}>{i18n.t('tap_add_files')}</Text>
 
-                        {connectionData && (
-                            <View style={styles.qrContainer}>
-                                <QRCode
-                                    value={connectionData}
-                                    size={180}
-                                    backgroundColor="white"
-                                    color={colors.primary}
-                                />
-                            </View>
-                        )}
-                    </View>
-                )}
+                            <TouchableOpacity
+                                style={styles.addFilesButton}
+                                onPress={handleSelectFiles}
+                            >
+                                <Icon name="plus" size={24} color={colors.primary} />
+                                <Text style={styles.addFilesText}>
+                                    {selectedFiles.length > 0
+                                        ? `${selectedFiles.length} ${i18n.t('files_selected')}`
+                                        : i18n.t('add_files')}
+                                </Text>
+                            </TouchableOpacity>
 
-                {/* Files List */}
-                <View style={styles.content}>
-                    {selectedFiles.length === 0 ? (
-                        <View style={styles.emptyState}>
-                            <Feather name="folder" size={64} color={colors.textSecondary} style={{ opacity: 0.3 }} />
-                            <Text style={styles.emptyText}>{i18n.t('no_files_selected')}</Text>
-                            <Text style={styles.emptyHint}>{i18n.t('tap_add_files')}</Text>
-                        </View>
+                            <TouchableOpacity
+                                style={[styles.actionButton, { backgroundColor: colors.primary, marginTop: 20, opacity: isLoading ? 0.7 : 1 }]}
+                                onPress={generateCode}
+                                disabled={isLoading}
+                            >
+                                <Text style={styles.actionButtonText}>
+                                    {isLoading ? i18n.t('loading') + '...' : i18n.t('start_sharing')}
+                                </Text>
+                            </TouchableOpacity>
+                        </>
                     ) : (
                         <>
-                            <Text style={styles.fileCount}>
-                                {selectedFiles.length} {selectedFiles.length === 1 ? i18n.t('file') : i18n.t('files')}
-                            </Text>
-                            <FlatList
-                                data={selectedFiles}
-                                renderItem={renderFile}
-                                keyExtractor={(item, index) => `${item.uri}-${index}`}
-                                scrollEnabled={false}
-                            />
+                            <Text style={styles.cardTitle}>{i18n.t('hosting_started')}</Text>
+                            <Text style={styles.cardDesc}>{i18n.t('scan_qr_or_enter')}</Text>
+
+                            {connectionData && (
+                                <View style={styles.qrContainer}>
+                                    <QRCode
+                                        value={connectionData}
+                                        size={200}
+                                        color={colors.text}
+                                        backgroundColor={colors.card}
+                                    />
+                                </View>
+                            )}
+
+                            <View style={styles.codeContainer}>
+                                <Text style={styles.codeLabel}>{i18n.t('connection_info')}</Text>
+                                <Text style={[styles.codeValue, { fontSize: 14 }]} selectable={true}>
+                                    {connectionData}
+                                </Text>
+                            </View>
+
+                            {/* Add More Files button */}
+                            <TouchableOpacity
+                                style={styles.addFilesButton}
+                                onPress={handleSelectFiles}
+                            >
+                                <Icon name="plus" size={24} color={colors.primary} />
+                                <Text style={styles.addFilesText}>{i18n.t('add_more_files')}</Text>
+                            </TouchableOpacity>
+
+                            {/* Received files from connected device */}
+                            {receivedFiles.length > 0 && (
+                                <View style={styles.receivedSection}>
+                                    <Text style={styles.receivedTitle}>
+                                        {i18n.t('receive_files')} ({receivedFiles.length})
+                                    </Text>
+                                    {receivedFiles.map((file, index) => (
+                                        <View key={index} style={styles.receivedFileItem}>
+                                            <Icon name="file" size={20} color={colors.text} />
+                                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                                <Text style={styles.receivedFileName} numberOfLines={1}>{file.name}</Text>
+                                                <Text style={styles.receivedFileSize}>{formatSize(file.size)}</Text>
+                                            </View>
+                                            <Icon name="check-circle" size={20} color={colors.primary} />
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+
+                            <TouchableOpacity
+                                style={[styles.actionButton, { backgroundColor: colors.error, marginTop: 16 }]}
+                                onPress={stopHosting}
+                            >
+                                <Text style={styles.actionButtonText}>{i18n.t('stop_sharing')}</Text>
+                            </TouchableOpacity>
                         </>
                     )}
                 </View>
             </ScrollView>
-
-            {/* Actions */}
-            <View style={styles.actions}>
-                {!isHosting ? (
-                    <>
-                        <TouchableOpacity
-                            style={styles.addButton}
-                            onPress={handleAddFiles}
-                        >
-                            <Feather name="plus" size={20} color={colors.primary} />
-                            <Text style={styles.addButtonText}>{i18n.t('add_files')}</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.startButton, selectedFiles.length === 0 && styles.disabledButton]}
-                            onPress={startHosting}
-                            disabled={selectedFiles.length === 0}
-                        >
-                            <Text style={styles.startButtonText}>{i18n.t('start_sharing')}</Text>
-                        </TouchableOpacity>
-                    </>
-                ) : (
-                    <TouchableOpacity
-                        style={styles.stopButton}
-                        onPress={stopHosting}
-                    >
-                        <Text style={styles.stopButtonText}>{i18n.t('stop_sharing')}</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
         </View>
     );
 }
@@ -233,170 +200,144 @@ const getStyles = (colors: ThemeColors, isDark: boolean, language: string) => St
         flex: 1,
         backgroundColor: colors.background,
     },
-    scrollView: {
-        flex: 1,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
+        justifyContent: 'center',
         paddingTop: 60,
         paddingBottom: 20,
         backgroundColor: colors.card,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
-    backButton: {
-        padding: 10,
-    },
     title: {
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: Fonts.bold,
         color: colors.text,
-    },
-    sessionCard: {
-        backgroundColor: colors.primary,
-        margin: 20,
-        padding: 24,
-        borderRadius: 20,
-        alignItems: 'center',
-    },
-    sessionLabel: {
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
-        marginBottom: 8,
-    },
-    sessionCode: {
-        fontSize: 48,
-        fontWeight: '800',
-        color: '#fff',
-        letterSpacing: 8,
-    },
-    sessionHint: {
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.7)',
-        marginTop: 8,
-        textAlign: 'center',
-    },
-    qrContainer: {
-        marginTop: 24,
-        padding: 16,
-        backgroundColor: 'white',
-        borderRadius: 16,
     },
     content: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    },
-    emptyState: {
+        flexGrow: 1,
+        padding: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 60,
     },
-    emptyText: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.text,
-        marginTop: 16,
-    },
-    emptyHint: {
-        fontSize: 14,
-        color: colors.textSecondary,
-        marginTop: 8,
-    },
-    fileCount: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.textSecondary,
-        marginVertical: 16,
-    },
-    fileItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    card: {
+        width: '100%',
         backgroundColor: colors.card,
-        padding: 16,
+        borderRadius: 24,
+        padding: 32,
+        alignItems: 'center',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
+    },
+    cardTitle: {
+        fontSize: 24,
+        fontFamily: Fonts.bold,
+        color: colors.text,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    cardDesc: {
+        fontSize: 16,
+        fontFamily: Fonts.regular,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        marginBottom: 32,
+    },
+    codeContainer: {
+        backgroundColor: colors.inputBg,
+        padding: 24,
         borderRadius: 16,
-        marginBottom: 12,
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 32,
         borderWidth: 1,
         borderColor: colors.border,
     },
-    fileIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: colors.inputBg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 16,
-    },
-    fileInfo: {
-        flex: 1,
-    },
-    fileName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.text,
-        marginBottom: 4,
-    },
-    fileSize: {
+    codeLabel: {
         fontSize: 14,
+        fontFamily: Fonts.regular,
         color: colors.textSecondary,
+        marginBottom: 8,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
-    removeButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.inputBg,
+    codeValue: {
+        fontSize: 32,
+        fontFamily: Fonts.bold,
+        color: colors.primary,
+        letterSpacing: 4,
+    },
+    actionButton: {
+        width: '100%',
+        paddingVertical: 16,
+        borderRadius: 12,
         alignItems: 'center',
-        justifyContent: 'center',
     },
-    actions: {
-        padding: 20,
-        gap: 12,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        backgroundColor: colors.background,
+    actionButtonText: {
+        fontSize: 18,
+        fontFamily: Fonts.bold,
+        color: '#fff',
     },
-    addButton: {
+    addFilesButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderStyle: 'dashed',
+        width: '100%',
         justifyContent: 'center',
         gap: 8,
-        paddingVertical: 16,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: colors.primary,
-        backgroundColor: 'transparent',
     },
-    addButtonText: {
+    addFilesText: {
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: Fonts.regular,
         color: colors.primary,
     },
-    startButton: {
-        backgroundColor: colors.primary,
-        paddingVertical: 18,
+    qrContainer: {
+        padding: 16,
+        backgroundColor: '#fff',
         borderRadius: 16,
+        marginBottom: 24,
+    },
+    // Received files styles
+    receivedSection: {
+        width: '100%',
+        marginTop: 16,
+        padding: 16,
+        backgroundColor: colors.inputBg,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    receivedTitle: {
+        fontSize: 16,
+        fontFamily: Fonts.bold,
+        color: colors.text,
+        marginBottom: 12,
+    },
+    receivedFileItem: {
+        flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
     },
-    startButtonText: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#fff',
+    receivedFileName: {
+        fontSize: 14,
+        fontFamily: Fonts.regular,
+        color: colors.text,
     },
-    stopButton: {
-        backgroundColor: colors.error,
-        paddingVertical: 18,
-        borderRadius: 16,
-        alignItems: 'center',
-    },
-    stopButtonText: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#fff',
-    },
-    disabledButton: {
-        opacity: 0.5,
+    receivedFileSize: {
+        fontSize: 12,
+        fontFamily: Fonts.regular,
+        color: colors.textSecondary,
     },
 });
+
+

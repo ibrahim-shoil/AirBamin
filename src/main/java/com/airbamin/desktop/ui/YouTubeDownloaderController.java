@@ -65,6 +65,10 @@ public class YouTubeDownloaderController {
     private CheckBox subtitlesCheck;
     @FXML
     private CheckBox thumbnailCheck;
+    @FXML
+    private VBox subtitleLanguagesBox;
+    @FXML
+    private ListView<CheckBox> subtitleLanguagesList;
 
     // Progress Section
     @FXML
@@ -152,7 +156,8 @@ public class YouTubeDownloaderController {
         downloadTypeChoice.setItems(FXCollections.observableArrayList(
                 bundle.getString("downloader.type.video"),
                 bundle.getString("downloader.type.audio"),
-                bundle.getString("downloader.type.video_subs")));
+                bundle.getString("downloader.type.video_subs"),
+                bundle.getString("downloader.type.subtitles_only")));
         downloadTypeChoice.setValue(bundle.getString("downloader.type.video"));
 
         // Quality options (will be populated after video info fetch)
@@ -174,16 +179,38 @@ public class YouTubeDownloaderController {
         // Toggle quality/audio format visibility based on download type
         downloadTypeChoice.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             boolean isAudioOnly = newVal != null && newVal.equals(bundle.getString("downloader.type.audio"));
+            boolean isSubtitlesOnly = newVal != null
+                    && newVal.equals(bundle.getString("downloader.type.subtitles_only"));
 
-            qualityBox.setVisible(!isAudioOnly);
-            qualityBox.setManaged(!isAudioOnly);
+            qualityBox.setVisible(!isAudioOnly && !isSubtitlesOnly);
+            qualityBox.setManaged(!isAudioOnly && !isSubtitlesOnly);
             audioFormatBox.setVisible(isAudioOnly);
             audioFormatBox.setManaged(isAudioOnly);
+
+            // For subtitle-only mode: hide checkbox but show language selector
+            if (isSubtitlesOnly) {
+                subtitlesCheck.setVisible(false);
+                subtitlesCheck.setManaged(false);
+                subtitleLanguagesBox.setVisible(true);
+                subtitleLanguagesBox.setManaged(true);
+            } else {
+                subtitlesCheck.setVisible(true);
+                subtitlesCheck.setManaged(true);
+                // Keep language selector state based on checkbox
+                subtitleLanguagesBox.setVisible(subtitlesCheck.isSelected());
+                subtitleLanguagesBox.setManaged(subtitlesCheck.isSelected());
+            }
         });
 
         // URL field - enable fetch button when URL entered
         urlField.textProperty().addListener((obs, oldVal, newVal) -> {
             fetchButton.setDisable(newVal == null || newVal.trim().isEmpty() || !downloadService.isReady());
+        });
+
+        // Subtitle checkbox - show/hide subtitle language selector
+        subtitlesCheck.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            subtitleLanguagesBox.setVisible(newVal);
+            subtitleLanguagesBox.setManaged(newVal);
         });
 
         // Enter key to fetch
@@ -319,6 +346,20 @@ public class YouTubeDownloaderController {
                 qualityChoice.setValue(defaultQuality);
             }
         }
+
+        // Populate subtitle languages
+        subtitleLanguagesList.getItems().clear();
+        if (!info.subtitles.isEmpty()) {
+            for (SubtitleTrack track : info.subtitles) {
+                CheckBox cb = new CheckBox(track.name);
+                cb.setUserData(track.code); // Store language code
+                // Auto-select English by default
+                if (track.code.startsWith("en")) {
+                    cb.setSelected(true);
+                }
+                subtitleLanguagesList.getItems().add(cb);
+            }
+        }
     }
 
     @FXML
@@ -341,8 +382,21 @@ public class YouTubeDownloaderController {
 
         String downloadType = downloadTypeChoice.getValue();
         options.audioOnly = downloadType.equals(bundle.getString("downloader.type.audio"));
+        options.subtitlesOnly = downloadType.equals(bundle.getString("downloader.type.subtitles_only"));
 
-        if (options.audioOnly) {
+        if (options.subtitlesOnly) {
+            // Subtitle-only mode: always enable subtitle download
+            options.downloadSubtitles = true;
+            // Collect selected language codes
+            List<String> selectedLangs = new ArrayList<>();
+            for (CheckBox cb : subtitleLanguagesList.getItems()) {
+                if (cb.isSelected()) {
+                    selectedLangs.add((String) cb.getUserData());
+                }
+            }
+            // Fallback to English if nothing selected
+            options.subtitleLangs = selectedLangs.isEmpty() ? Arrays.asList("en") : selectedLangs;
+        } else if (options.audioOnly) {
             String audioFormat = audioFormatChoice.getValue();
             options.audioFormat = audioFormat != null ? audioFormat.toLowerCase() : "mp3";
         } else {
@@ -354,10 +408,18 @@ public class YouTubeDownloaderController {
             options.outputFormat = "mp4";
         }
 
-        // Subtitles - default to just 'en' to avoid 429 Too Many Requests
+        // Subtitles - collect selected languages from list
         if (subtitlesCheck.isSelected()) {
             options.downloadSubtitles = true;
-            options.subtitleLangs = Arrays.asList("en");
+            // Collect selected language codes
+            List<String> selectedLangs = new ArrayList<>();
+            for (CheckBox cb : subtitleLanguagesList.getItems()) {
+                if (cb.isSelected()) {
+                    selectedLangs.add((String) cb.getUserData());
+                }
+            }
+            // Fallback to English if nothing selected
+            options.subtitleLangs = selectedLangs.isEmpty() ? Arrays.asList("en") : selectedLangs;
         }
 
         // Thumbnail
