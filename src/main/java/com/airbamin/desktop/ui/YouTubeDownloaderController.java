@@ -156,7 +156,6 @@ public class YouTubeDownloaderController {
         downloadTypeChoice.setItems(FXCollections.observableArrayList(
                 bundle.getString("downloader.type.video"),
                 bundle.getString("downloader.type.audio"),
-                bundle.getString("downloader.type.video_subs"),
                 bundle.getString("downloader.type.subtitles_only")));
         downloadTypeChoice.setValue(bundle.getString("downloader.type.video"));
 

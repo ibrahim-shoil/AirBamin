@@ -37,8 +37,23 @@ public class YouTubeDownloadService {
         downloadsDir = Paths.get(System.getProperty("user.home"), "Downloads", "AirBamin", "YouTube");
         try {
             Files.createDirectories(downloadsDir);
+            log("Service initialized.");
+            log("User Dir: " + System.getProperty("user.dir"));
+            log("jpackage.app-path: " + System.getProperty("jpackage.app-path"));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void log(String message) {
+        try {
+            Path logFile = Paths.get(System.getProperty("user.home"), "Downloads", "AirBamin", "debug.log");
+            String timestamp = java.time.LocalDateTime.now().toString();
+            Files.writeString(logFile, timestamp + ": " + message + System.lineSeparator(),
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            System.out.println(message);
+        } catch (IOException e) {
+            System.err.println("Failed to log: " + message);
         }
     }
 
@@ -106,8 +121,75 @@ public class YouTubeDownloadService {
     }
 
     private Path findFfmpeg() {
-        String ffmpeg = findInPath("ffmpeg");
-        return ffmpeg != null ? Paths.get(ffmpeg) : null;
+        log("Looking for FFmpeg...");
+
+        // 1. Check using jpackage.app-path (Reliable for macOS .app bundles)
+        String appPath = System.getProperty("jpackage.app-path");
+        if (appPath != null) {
+            log("jpackage.app-path found: " + appPath);
+            try {
+                Path executablePath = Paths.get(appPath);
+                Path contentsDir = executablePath.getParent().getParent();
+                if (contentsDir != null) {
+                    // Check multiple possible locations in the bundle
+                    // Standard jpackage location is usually under app or runtime/bin
+                    // We check: Contents/app/ffmpeg, Contents/Java/ffmpeg, Contents/MacOS/ffmpeg,
+                    // Contents/Resources/ffmpeg
+                    Path[] candidates = {
+                            contentsDir.resolve("app").resolve("ffmpeg"),
+                            contentsDir.resolve("Java").resolve("ffmpeg"),
+                            contentsDir.resolve("MacOS").resolve("ffmpeg"),
+                            contentsDir.resolve("Resources").resolve("ffmpeg")
+                    };
+
+                    for (Path p : candidates) {
+                        if (checkFfmpeg(p))
+                            return p.toAbsolutePath();
+                    }
+                }
+            } catch (Exception e) {
+                log("Error resolving jpackage path: " + e.getMessage());
+            }
+        }
+
+        // 2. Check user.dir
+        Path userDirFfmpeg = Paths.get(System.getProperty("user.dir"), "ffmpeg");
+        if (checkFfmpeg(userDirFfmpeg))
+            return userDirFfmpeg.toAbsolutePath();
+
+        // 3. Check next to JAR
+        try {
+            java.security.CodeSource codeSource = YouTubeDownloadService.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null && codeSource.getLocation() != null) {
+                Path jarPath = Paths.get(codeSource.getLocation().toURI());
+                Path jarDir = jarPath.getParent();
+                log("Jar Dir: " + jarDir);
+                if (jarDir != null) {
+                    if (checkFfmpeg(jarDir.resolve("ffmpeg")))
+                        return jarDir.resolve("ffmpeg").toAbsolutePath();
+                }
+            }
+        } catch (Exception e) {
+            log("Error checking JAR dir: " + e.getMessage());
+        }
+
+        // 4. System Path
+        String systemPath = findInPath("ffmpeg");
+        if (systemPath != null) {
+            log("Found in system PATH: " + systemPath);
+            return Paths.get(systemPath);
+        }
+
+        log("FFmpeg NOT FOUND");
+        return null;
+    }
+
+    private boolean checkFfmpeg(Path p) {
+        log("Checking path: " + p);
+        boolean exists = Files.exists(p);
+        boolean exec = Files.isExecutable(p);
+        log("  Exists: " + exists + ", Executable: " + exec);
+        return exists && exec;
     }
 
     private String findInPath(String executable) {
@@ -403,6 +485,7 @@ public class YouTubeDownloadService {
                             return;
                         }
 
+                        log("[yt-dlp] " + line);
                         System.out.println("[yt-dlp] " + line);
 
                         Matcher destMatcher = destPattern.matcher(line);
@@ -442,7 +525,9 @@ public class YouTubeDownloadService {
                 currentProcess = null;
 
                 if (exitCode == 0) {
-                    if (options.subtitlesOnly) { postProcessSubtitles(); }
+                    if (options.subtitlesOnly || options.downloadSubtitles) {
+                        postProcessSubtitles();
+                    }
                     Path outputFile = lastFile != null ? Paths.get(lastFile) : downloadsDir;
                     callback.onComplete(outputFile);
                 } else {
@@ -461,6 +546,12 @@ public class YouTubeDownloadService {
         List<String> cmd = new ArrayList<>();
         cmd.add(ytDlpPath.toString());
 
+        // Explicitly set ffmpeg location if we found it
+        if (ffmpegPath != null) {
+            cmd.add("--ffmpeg-location");
+            cmd.add(ffmpegPath.toString());
+        }
+
         // Use a standard browser user agent
         cmd.add("--user-agent");
         cmd.add("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
@@ -472,7 +563,7 @@ public class YouTubeDownloadService {
             cmd.add("-o");
             cmd.add("subtitle:" + downloadsDir.resolve("%(title)s-%(sub_lang)s.%(ext)s").toString());
             cmd.add("--write-subs");
-            cmd.add("--write-auto-subs");  // Download both manual and auto-generated
+            cmd.add("--write-auto-subs"); // Download both manual and auto-generated
         }
 
         // Output template
@@ -515,32 +606,32 @@ public class YouTubeDownloadService {
             int height = extractHeight(options.quality);
             if (height > 0) {
                 cmd.add("-f");
-                // STRICT H.264 (avc1) + AAC for Premiere Pro / NLE compatibility
-                // No VP9/AV1 fallback - we'll recode if necessary
+                // STRICT H.264 (avc1) + AAC priority
+                // 1. Best AVC1 video (<=height) + m4a audio
+                // 2. Best AVC video (<=height) + m4a audio
+                // 3. Fallback: Any mp4 video (<=height) NOT VP9/AV1 + m4a audio
                 cmd.add(String.format(
                         "bestvideo[height<=%d][vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[height<=%d][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=%d][ext=mp4][vcodec!^=vp][vcodec!^=av01]+bestaudio[ext=m4a]",
                         height, height, height));
             } else {
                 cmd.add("-f");
+                // Same logic for "Best" quality (no height limit)
                 cmd.add("bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[ext=mp4][vcodec!^=vp][vcodec!^=av01]+bestaudio[ext=m4a]");
             }
 
-            // Force re-encode to H.264 if source codec is incompatible
-            cmd.add("--recode-video");
+            // Use merge-output-format instead of recode-video for cleaner muxing
+            // This prevents "double length" issues caused by extensive transcoding of
+            // already-compatible streams
+            cmd.add("--merge-output-format");
             cmd.add("mp4");
 
-            // Output format
-            if (options.outputFormat != null) {
-                cmd.add("--merge-output-format");
-                cmd.add(options.outputFormat);
-            }
         } else {
             // Default: prefer standard compatibility
             cmd.add("-f");
             cmd.add("bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[ext=mp4][vcodec!^=vp][vcodec!^=av01]+bestaudio[ext=m4a]");
 
-            // Force re-encode to H.264 if needed
-            cmd.add("--recode-video");
+            // Use merge-output-format instead of recode-video
+            cmd.add("--merge-output-format");
             cmd.add("mp4");
         }
 
@@ -596,17 +687,19 @@ public class YouTubeDownloadService {
         }
     }
 
-
     /**
-     * Post-process subtitles: rename to remove video ID and -NA, create TXT versions
+     * Post-process subtitles: rename to remove video ID and -NA, create TXT
+     * versions
      */
     private void postProcessSubtitles() {
         try {
             File[] srtFiles = downloadsDir.toFile().listFiles((dir, name) -> name.endsWith(".srt"));
-            if (srtFiles == null) return;
+            if (srtFiles == null)
+                return;
             for (File file : srtFiles) {
                 String fileName = file.getName();
-                String newName = fileName.replaceAll(" \\[.*?\\]", "").replace("-NA.", "-").replaceAll("\\.(\\w{2})\\.(srt|txt)$", "-$1.$2");
+                String newName = fileName.replaceAll(" \\[.*?\\]", "").replace("-NA.", "-")
+                        .replaceAll("\\.(\\w{2})\\.(srt|txt)$", "-$1.$2");
                 if (!newName.equals(fileName)) {
                     File renamedFile = new File(file.getParent(), newName);
                     file.renameTo(renamedFile);
@@ -631,11 +724,12 @@ public class YouTubeDownloadService {
             }
             // Write back cleaned SRT
             java.nio.file.Files.write(srtFile.toPath(), cleanedLines);
-            
+
             // Create TXT copy
             String txtFileName = srtFile.getName().replace(".srt", ".txt");
             File txtFile = new File(srtFile.getParent(), txtFileName);
-            java.nio.file.Files.copy(srtFile.toPath(), txtFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            java.nio.file.Files.copy(srtFile.toPath(), txtFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             System.err.println("Error creating TXT from " + srtFile.getName() + ": " + e.getMessage());
         }

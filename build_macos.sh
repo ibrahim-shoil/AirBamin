@@ -56,7 +56,16 @@ rm -rf dist
 mkdir -p dist
 cp "target/${MAIN_JAR}" dist/
 
-# 3. Create ICNS icon if it doesn't exist
+# 2.5 Download and Bundle FFmpeg (Required for packaged app)
+echo ""
+echo "[2.5/4] Bundling FFmpeg..."
+FFMPEG_URL="https://evermeet.cx/ffmpeg/ffmpeg-6.1.1.zip"
+curl -L -o ffmpeg.zip "$FFMPEG_URL"
+unzip -o -q ffmpeg.zip
+mv ffmpeg dist/
+chmod +x dist/ffmpeg
+xattr -cr dist/ffmpeg
+rm ffmpeg.zip
 echo ""
 echo "[3/4] Preparing icon..."
 ICNS_PATH="src/main/resources/favicon_io/airbamin.icns"
